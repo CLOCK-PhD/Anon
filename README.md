@@ -1,1 +1,3 @@
-# Anon
+# Patient Anonymity
+
+The number of clinically actionable discoveries produced from patient sequencing is remarkably low. This is unsurprising as many genetic components of human disease consist of an interaction of a large number of small variations; most studies however are of small size and do not have sufficient statistical power to infer these interactions. Sequencing data is large, sensitive and heterogeneous. As a consequence, they cannot circulate between research labs, they are difficult to analyze and to integrate. In this proposal, we will implement machine learning techniques to better explore sequencing data without the requirement of a reference genome, implement dimension reduction techniques to allow easy integration of data from multiple sources, implement indexing strategies to store more compact versions of sequencing data and finally, we will generate software that enables easy exchange of data while preserving patient anonymity.
