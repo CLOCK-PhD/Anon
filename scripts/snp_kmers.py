@@ -16,8 +16,8 @@ import re
 
 from numpy import equal
 
-input_file = "example.fas"
-#input_file = "rs_ch1.fas"
+input_file = "../data/example.fas"
+#input_file = "../data/rs_ch1.fas"
 
 # Extraire les variants possibles :
 def extract_snp_var(seq_info):
