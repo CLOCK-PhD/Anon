@@ -10,6 +10,10 @@
 # 3 = position du SNP dans la séquence
 # 4 = longueur de la séquence
 
+# structure de k-mers voulue : Séquence, ID, chromosome, position du SNP, position DU KMER
+
+# A FAIRE : GERER LES KMERMAX < KMERSIZE
+
 from pprint import pprint
 from Bio import SeqIO
 import re
@@ -28,6 +32,7 @@ def extract_snp_var(seq_info):
     else:
         # Cas où on a un résultat non gérable
         # exemple : alleles="(A)8/10"
+        # GERER CE CAS EN AVAL
         return 0
     
     if len(snp_var) == 1:
@@ -38,36 +43,16 @@ def extract_snp_var(seq_info):
         return x
 
 # Sélectionner la séquence à diviser en k-mers :
-# GERER LE ELSE SI SNP_POS < KMER_SIZE
 def make_max_kmer(kmer_size, seq, snp_pos, seq_len):
     if snp_pos >= kmer_size : # cas ideal où len(maxkmer) = 2*kmer_size) -1
         max_kmer = seq[snp_pos - kmer_size : snp_pos + kmer_size -1]
         return max_kmer
     else :
-        # partie à modifier
-        max_kmer = "AAXAAAAAAAAAA"
+        max_kmer = seq[0 : kmer_size + (snp_pos - 1)]
         return max_kmer
 
-# Générer les kmers des snp
-# A FAIRE : Intégrer les variants simples
-# A FAIRE : Intégrer les variants multiples
-# A FAIRE : Intégrer les variants de taille >1
-# Objectif : remplacer le snp de référence par les variants
-#   Les variants sont stockés dans la liste snp_var
-#   
-# Fonctionne pour les kmers idéaux + kmer snp_pos<kmer_size
-def kmer_generator(kmer_size, kmer_to_cut):
-    kmer_list = []
-    for i in range(0, kmer_size, 1):
-        kmer = kmer_to_cut[i : i + kmer_size]
-        if len(kmer) == kmer_size: # pour garder des kmer de taille voulue
-            kmer_list.append(kmer)
-
-    pprint(kmer_list)
-    return kmer_list
-
 # Fonction pour remplacer le snp du kmer par ses variations connues :
-def max_kmer_variations(max_kmer, snp_var, kmer_size):
+def max_kmer_variations(max_kmer, snp_pos, snp_var, kmer_size):
     max_kmers_list = []
     if len(max_kmer) == 2*kmer_size - 1:
         for snp in snp_var:
@@ -80,8 +65,26 @@ def max_kmer_variations(max_kmer, snp_var, kmer_size):
     else :
         # il est nécessaire de noter la position du snp dans ces kmers
         print("bite")
+        for snp in snp_var:
+            if len(snp) == 1 :
+                print("kmermax réduit, snp taille 1")
+                max_kmer_var = max_kmer[:snp_pos-1] + snp + max_kmer[kmer_size - snp_pos:]
+                max_kmers_list.append(max_kmer_var)
+            else:
+                print("kmermax réduit, snp taille >1")
     return max_kmers_list
 
+# Générer les kmers des snp  
+# Fonctionne pour les kmers idéaux + kmer snp_pos<kmer_size
+def kmer_generator(kmer_size, kmer_to_cut):
+    kmer_list = []
+    for i in range(0, kmer_size, 1):
+        kmer = kmer_to_cut[i : i + kmer_size]
+        if len(kmer) == kmer_size: # pour garder des kmer de taille voulue
+            kmer_list.append(kmer)
+
+    pprint(kmer_list)
+    return kmer_list
 
 kmer_size = 11
 # GERER LES SNP_POS < KMER_SIZE !!!!!
@@ -90,16 +93,14 @@ kmer_size = 11
 
 count = 0
 
+"""
 # Vérifications terminées
 #origin_snp = ["N", "R", "Y", "S", "W", "K", "M", "B", "D", "H", "V"]
 # refaire sans ATCG et enregistrer les sorties pour ces nt
 # ,"A", "T", "C", "G"
-
-
-# structure de k-mers voulue : Séquence, ID, chromosome, position du SNP, position DU KMER
-
 # Fichier output
 #outputFile = open("../data/weird_fucks.txt", "w")
+"""
 
 # Extraire les kmers à partir des données rs_fasta
 with open(input_file) as handle :
@@ -123,7 +124,7 @@ with open(input_file) as handle :
         print(max_kmer)
         print(len(max_kmer))
         print(max_kmer[kmer_size-1]) # Afficher le SNP dans le kmer_max
-        max_kmers_list = max_kmer_variations(str(max_kmer), seq_snp_var, kmer_size)
+        max_kmers_list = max_kmer_variations(str(max_kmer), snp_pos, seq_snp_var, kmer_size)
         pprint(max_kmers_list)
 
         # kmer_generator(kmer_size, str(max_kmer))
@@ -135,6 +136,7 @@ with open(input_file) as handle :
         
         count += 1
 
+        """
         # vérification des char utilisés pour les SNP:
         #if record.seq[int(snp_pos)-1] not in origin_snp :
             #print(record.description)
@@ -142,15 +144,15 @@ with open(input_file) as handle :
             #outputFile.write(record.description)
             #outputFile.write("\n")
             #break
-
+        """
 #outputFile.close()
 
 print(f"Nombre total de SNP dans le chromosome 1 : {count}")
 
+"""
 # Même chose avec une liste des positions pour chercher directement 
 # dans la primary assembly par chromosome
 # A modifier pour que ça marche avec chaque chromosome
-"""
 chrom1_snp_pos = [10019, 10039]
 kmer_snp = []
 # parcourir les séquences
