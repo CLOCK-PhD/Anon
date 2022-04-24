@@ -13,6 +13,7 @@
 # structure de k-mers voulue : Séquence, ID, chromosome, position du SNP, position DU KMER
 
 # A FAIRE : GERER LES KMERMAX < KMERSIZE
+# A FAIRE : gérer le cas ou len(snp) > kmer
 
 from pprint import pprint
 from Bio import SeqIO
@@ -32,7 +33,6 @@ def extract_snp_var(seq_info):
     else:
         # Cas où on a un résultat non gérable
         # exemple : alleles="(A)8/10"
-        # GERER CE CAS EN AVAL
         return 0
     
     if len(snp_var) == 1:
@@ -54,24 +54,34 @@ def make_max_kmer(kmer_size, seq, snp_pos, seq_len):
 # Fonction pour remplacer le snp du kmer par ses variations connues :
 def max_kmer_variations(max_kmer, snp_pos, snp_var, kmer_size):
     max_kmers_list = []
-    if len(max_kmer) == 2*kmer_size - 1:
-        for snp in snp_var:
-            if len(snp) == 1:   # Cas où le SNP est de taille 1 et qu'on a un kmermax
-                max_kmer_var = max_kmer[:kmer_size - 1] + snp + max_kmer[kmer_size:]
-                max_kmers_list.append(max_kmer_var)
-            else : # cas du snp long
-                max_kmer_var = max_kmer[len(snp)-1:kmer_size-1] + snp + max_kmer[kmer_size:len(max_kmer)-(len(snp)-1)]
-                max_kmers_list.append(max_kmer_var)
+    
+    
+    if(snp_var != 0):
+        for snp in snp_var :
+            if len(snp) >= kmer_size:
+                snp_var.remove(snp)
+        pprint(f"kmer max épurés : {snp_var}")
+        if len(max_kmer) == 2*kmer_size - 1:
+            for snp in snp_var:
+                if len(snp) == 1:   # Cas où le SNP est de taille 1 et qu'on a un kmermax
+                    max_kmer_var = max_kmer[:kmer_size - 1] + snp + max_kmer[kmer_size:]
+                    max_kmers_list.append(max_kmer_var)
+                else : # cas du snp long
+                    max_kmer_var = max_kmer[len(snp)-1:kmer_size-1] + snp + max_kmer[kmer_size:len(max_kmer)-(len(snp)-1)]
+                    max_kmers_list.append(max_kmer_var)
+        else :
+            for snp in snp_var:
+                if len(snp) == 1 :
+                    print("kmermax réduit, snp taille 1")
+                    max_kmer_var = max_kmer[:snp_pos-1] + snp + max_kmer[kmer_size - snp_pos:]
+                    max_kmers_list.append(max_kmer_var)
+                else:
+                    print("kmermax réduit, snp taille >1")
+                    max_kmer_var = max_kmer[:snp_pos-1] + snp + max_kmer[kmer_size - snp_pos:len(max_kmer)-(len(snp)-1)]
+                    max_kmers_list.append(max_kmer_var)
     else :
-        # il est nécessaire de noter la position du snp dans ces kmers
-        print("bite")
-        for snp in snp_var:
-            if len(snp) == 1 :
-                print("kmermax réduit, snp taille 1")
-                max_kmer_var = max_kmer[:snp_pos-1] + snp + max_kmer[kmer_size - snp_pos:]
-                max_kmers_list.append(max_kmer_var)
-            else:
-                print("kmermax réduit, snp taille >1")
+        print("Machin anormal")
+        return max_kmers_list
     return max_kmers_list
 
 # Générer les kmers des snp  
@@ -86,10 +96,7 @@ def kmer_generator(kmer_size, kmer_to_cut):
     pprint(kmer_list)
     return kmer_list
 
-kmer_size = 11
-# GERER LES SNP_POS < KMER_SIZE !!!!!
-# taille de la snp_pos mini : 2
-# COUILLE : quand on a snp_var = 0
+kmer_size = 21
 
 count = 0
 
