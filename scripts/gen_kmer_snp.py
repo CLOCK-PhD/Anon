@@ -16,7 +16,7 @@
 # 1 = SNV; 2=DIV; 3=HETERIZYGOUS; 4=STR; 5=NAMED; 6=NO VARIATION; 7=MIXED; 8=MNV
 # https://www.ncbi.nlm.nih.gov/projects/SNP/snp_legend.cgi?legend=snpClass
 
-# Outp222ut = tsv : Séquence k-mer, ID, chromosome, position du SNP, position DU KMER
+# Output = tsv : Séquence k-mer, ID, chromosome, position du SNP, position DU KMER
 # Problème avec les fichiers rs_ch.fas : pas de position du snp et du kmer
 
 # A FAIRE : Faire fonctionner avec plusieurs inputs (essayer parallélisation ?)
@@ -50,7 +50,6 @@ output_dir = args.output_dir
 snp_count = 0
 kmers = []
 file_number = 0
-#output_dir = "generated_kmers"
 os.makedirs(output_dir)
 
 print(input_file)
@@ -81,8 +80,7 @@ def make_max_kmer(kmer_size, seq, snp_pos, seq_len):
 
 # Fonction pour remplacer le snp du kmer par ses variations connues :
 def max_kmer_variations(max_kmer, snp_pos, snp_var, kmer_size):
-    max_kmers_list = []
-    
+    max_kmers_list = []  
     if(snp_var != 0):
         for snp in snp_var :
             if len(snp) >= kmer_size:
@@ -114,7 +112,6 @@ def kmer_generator(kmer_size, kmer_to_cut):
         kmer = kmer_to_cut[i : i + kmer_size]
         if len(kmer) == kmer_size: # pour garder des kmer de taille voulue
             kmer_list.append(kmer)
-
     return kmer_list
 
 # Extraire les kmers à partir des données rs_fasta
@@ -139,7 +136,6 @@ with open(input_file) as handle :
             for kmer in kmer_list:
                 record_kmer_list.append(kmer)
 
-        
         for kmer in record_kmer_list :
             # Ajouter les kmers à la liste des kmers
             if len(kmers) < kmers_per_file :
@@ -162,8 +158,7 @@ with open(input_file) as handle :
         with open(output_file_name, "w", encoding="utf-8") as f:
             for kmer in kmers :
                 line_output = f"{kmer[0]}\t{kmer[1]}\n"
-                f.write(line_output)
-        
+                f.write(line_output)       
         snp_count += 1
 
 
