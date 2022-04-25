@@ -1,23 +1,32 @@
 #!/usr/bin/python3
 
-# Extract k-mers around SNP in rs_ch files from dbSNP
+# Extract k-mers around SNP in rs_ch.fas files from dbSNP
 # ftp.ncbi.nih.gov/snp/organisms/human_9606/rs_fasta/
 
 # Positions des éléments dans les entêtes :
+# 0 = gnl; 1=dbSNP; 5=taxid; 6=mol; 10=suspect?
 # 2 = rs
 # 3 = position du SNP dans la séquence
 # 4 = longueur de la séquence
+# 7 = class
+# 8 = alleles
+# 9 = build
 
-# Output = tsv : Séquence k-mer, ID, chromosome, position du SNP, position DU KMER
-# Problème avec les fichiers rs_fasta : pas de position du snp et du kmer
+# SNP class description :
+# 1 = SNV; 2=DIV; 3=HETERIZYGOUS; 4=STR; 5=NAMED; 6=NO VARIATION; 7=MIXED; 8=MNV
+# https://www.ncbi.nlm.nih.gov/projects/SNP/snp_legend.cgi?legend=snpClass
+
+# Outp222ut = tsv : Séquence k-mer, ID, chromosome, position du SNP, position DU KMER
+# Problème avec les fichiers rs_ch.fas : pas de position du snp et du kmer
 
 # A FAIRE : Faire fonctionner avec plusieurs inputs (essayer parallélisation ?)
-#       IDEE : fournir un fichier en input et traiter tous les 
+#       IDEE : fournir un dossier en input et traiter tous les fichiers rs_ch.fas 
 # A FAIRE : LAST : Tri de tas des fichiers (autre programme ?)
 
 import re
 import sys
 import argparse
+import os
 from Bio import SeqIO
 from numpy import equal
 from matplotlib.pyplot import close
@@ -27,18 +36,22 @@ from pprint import pprint
 parser = argparse.ArgumentParser()
 
 # Fichier d'entrée
-parser.add_argument("-i", "--input", dest="rs_fasta_file", help = "rs_ch input file")
+parser.add_argument("-i", "--input", dest="rs_fasta_file", help = "rs_ch.fas input file")
 parser.add_argument("-k", "--kmer_size", dest="kmer_size", default=21, help="Select k-mer size")
 parser.add_argument("-n", dest="kmers_per_output_file", default=100000, help="Number of kmers per output file for the heap merge")
+parser.add_argument("-o", "--ouput", dest="output_dir", default="generated_kmers", help="Output folder name")
 
 args = parser.parse_args()
 input_file = args.rs_fasta_file
 kmer_size = int(args.kmer_size)
 kmers_per_file = int(args.kmers_per_output_file)
+output_dir = args.output_dir
 
 snp_count = 0
 kmers = []
 file_number = 0
+#output_dir = "generated_kmers"
+os.makedirs(output_dir)
 
 print(input_file)
 
@@ -134,7 +147,7 @@ with open(input_file) as handle :
                 kmers.append(kmer_id)
             # Exporter la liste quand on atteint un nombre de kmers dans la liste :
             if len(kmers) == kmers_per_file :
-                output_file_name = f"{str(file_number)}_snp_k {kmer_size}.tsv"
+                output_file_name = f"{output_dir}/{str(file_number)}_snp_k {kmer_size}.tsv"
                 kmers.sort()
                 with open(output_file_name, "w", encoding="utf-8") as f:
                     for kmer in kmers :
@@ -144,7 +157,7 @@ with open(input_file) as handle :
                 file_number += 1
 
         # Exporter les derniers kmers dans un fichier :        
-        output_file_name = f"{str(file_number)}_snp_k {kmer_size}.tsv"
+        output_file_name = f"{output_dir}/{str(file_number)}_snp_k {kmer_size}.tsv"
         kmers.sort()
         with open(output_file_name, "w", encoding="utf-8") as f:
             for kmer in kmers :
