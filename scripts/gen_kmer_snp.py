@@ -22,6 +22,7 @@
 # A FAIRE : Faire fonctionner avec plusieurs inputs (essayer parallélisation ?)
 #       IDEE : fournir un dossier en input et traiter tous les fichiers rs_ch.fas 
 # A FAIRE : LAST : Tri de tas des fichiers (autre programme ?)
+#       IDEE : parralléliser la tâche pendant la production des kmers ?
 
 import re
 import sys
@@ -46,13 +47,9 @@ input_file = args.rs_fasta_file
 kmer_size = int(args.kmer_size)
 kmers_per_file = int(args.kmers_per_output_file)
 output_dir = args.output_dir
-
-snp_count = 0
 kmers = []
 file_number = 0
 os.makedirs(output_dir)
-
-print(input_file)
 
 # Extraire les variants possibles :
 def extract_snp_var(seq_info):
@@ -117,12 +114,10 @@ def kmer_generator(kmer_size, kmer_to_cut):
 # Extraire les kmers à partir des données rs_fasta
 with open(input_file) as handle :
     for record in SeqIO.parse(handle, "fasta"):
-        # Séparer les informations de l'entête :
         seq_info = record.description.split("|")
         seq_rs = seq_info[2].split(" ")[0]
         snp_pos = int(seq_info[3].split("=")[1])
-        seq_len = int(seq_info[4].split("=")[1])
-        
+        seq_len = int(seq_info[4].split("=")[1])       
         seq_snp_var = extract_snp_var(seq_info[8])
         
         # Sélection du grand k-mer à découper en k-mer de taille voulue
@@ -143,7 +138,7 @@ with open(input_file) as handle :
                 kmers.append(kmer_id)
             # Exporter la liste quand on atteint un nombre de kmers dans la liste :
             if len(kmers) == kmers_per_file :
-                output_file_name = f"{output_dir}/{str(file_number)}_snp_k {kmer_size}.tsv"
+                output_file_name = f"{output_dir}/{str(file_number)}_snp_k{kmer_size}.tsv"
                 kmers.sort()
                 with open(output_file_name, "w", encoding="utf-8") as f:
                     for kmer in kmers :
@@ -153,13 +148,9 @@ with open(input_file) as handle :
                 file_number += 1
 
         # Exporter les derniers kmers dans un fichier :        
-        output_file_name = f"{output_dir}/{str(file_number)}_snp_k {kmer_size}.tsv"
+        output_file_name = f"{output_dir}/{str(file_number)}_snp_k{kmer_size}.tsv"
         kmers.sort()
         with open(output_file_name, "w", encoding="utf-8") as f:
             for kmer in kmers :
                 line_output = f"{kmer[0]}\t{kmer[1]}\n"
-                f.write(line_output)       
-        snp_count += 1
-
-
-print(f"Nombre total de SNP dans le chromosome 1 : {snp_count}")
+                f.write(line_output)
