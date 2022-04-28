@@ -36,6 +36,10 @@ from pprint import pprint
 # Gestion des arguments
 parser = argparse.ArgumentParser()
 
+# A FAIRE : Ajouter un message d'usage
+# A FAIRE : Docstring
+# A FAIRE : Préciser les types des arguments des fonctions
+
 # Fichier d'entrée
 parser.add_argument("-i", "--input", dest="rs_fasta_file", help = "rs_ch.fas input file")
 parser.add_argument("-k", "--kmer_size", dest="kmer_size", default=21, help="Select k-mer size")
