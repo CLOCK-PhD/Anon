@@ -21,8 +21,23 @@
 
 # A FAIRE : Faire fonctionner avec plusieurs inputs (essayer parallélisation ?)
 #       IDEE : fournir un dossier en input et traiter tous les fichiers rs_ch.fas 
+#       REALITE : l'execution du programme prend beaucoup trop de temps
 # A FAIRE : LAST : Tri de tas des fichiers (autre programme ?)
 #       IDEE : parralléliser la tâche pendant la production des kmers ?
+# A FAIRE : Ajouter un message d'usage
+# A FAIRE : Docstring
+# A FAIRE : Préciser les types des arguments des fonctions
+# A FAIRE : Supprimer les doublons (avant ou après tri ?)
+# A FAIRE : Ajouter les infos manquantes :
+#       chromosome (facile)
+#       Position du snp
+#       Position du kmer
+#       PISTE : intégrer les infos dispo ici et les confronter au fichier de ref pour les infos restantes
+#       Problème : ça risque d'être bien long.
+# A FAIRE : Intégrer l'allèle 1 qui n'était pas pris en compte
+# A FAIRE : Trouver d'autres trucs à faire
+# A FAIRE : Ne pas oublier que c'est pour produire des données et ne pas perdre trop de temps non plus
+# A FAIRE : OPTIMISER !!!!
 
 import re
 import sys
@@ -36,11 +51,7 @@ from pprint import pprint
 # Gestion des arguments
 parser = argparse.ArgumentParser()
 
-# A FAIRE : Ajouter un message d'usage
-# A FAIRE : Docstring
-# A FAIRE : Préciser les types des arguments des fonctions
-
-# Fichier d'entrée
+# Création des arguments
 parser.add_argument("-i", "--input", dest="rs_fasta_file", help = "rs_ch.fas input file")
 parser.add_argument("-k", "--kmer_size", dest="kmer_size", default=21, help="Select k-mer size")
 parser.add_argument("-n", dest="kmers_per_output_file", default=100000, help="Number of kmers per output file for the heap merge")

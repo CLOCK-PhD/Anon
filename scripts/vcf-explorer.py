@@ -9,7 +9,7 @@ import re
 
 snp_per_chromosome_count = {}
 
-with open("download/00-All.vcf") as f :
+with open("../data/snp_latest/data") as f :
 #with open("test.vcf") as f :    
     current_start = ""
 
