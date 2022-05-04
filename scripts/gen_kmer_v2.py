@@ -1,6 +1,9 @@
 #!/usr/bin/python3
 
 # Extract k-mers around SNP in rs_ch.fas files from dbSNP
+# ESSAI AVEC DICTIONNAIRE : OK
+# TRIE ET EVITE LES DOUBLONS
+
 # ftp.ncbi.nih.gov/snp/organisms/human_9606/rs_fasta/
 
 # Positions des éléments dans les entêtes :
@@ -38,15 +41,12 @@
 # A FAIRE : Intégrer l'allèle 1 qui n'était pas pris en compte
 # A FAIRE : Trouver d'autres trucs à faire
 # A FAIRE : Ne pas oublier que c'est pour produire des données et ne pas perdre trop de temps non plus
-# A FAIRE : OPTIMISER !!!!
-#       IDEE : Faire le sort dans un autre programme ?
-#       IDEE : Insérer en triant avec bisect() / insort() ?
-#       IDEE : Supprimer les doublons avant insertion ? (meh)
 
 import re
 import sys
 import argparse
 import os
+from typing import OrderedDict
 from Bio import SeqIO
 from numpy import equal
 from matplotlib.pyplot import close
@@ -66,7 +66,7 @@ input_file = args.rs_fasta_file
 kmer_size = int(args.kmer_size)
 kmers_per_file = int(args.kmers_per_output_file)
 output_dir = args.output_dir
-kmers = []
+kmers = {}
 file_number = 0
 os.makedirs(output_dir)
 
@@ -153,23 +153,25 @@ with open(input_file) as handle :
         for kmer in record_kmer_list :
             # Ajouter les kmers à la liste des kmers
             if len(kmers) < kmers_per_file :
-                kmer_id = (kmer, seq_rs)
-                kmers.append(kmer_id)
+                #kmer_id = (kmer, seq_rs)
+                #kmers.append(kmer_id)
+                kmers[kmer]=seq_rs
             # Exporter la liste quand on atteint un nombre de kmers dans la liste :
             if len(kmers) == kmers_per_file :
                 output_file_name = f"{output_dir}/{str(file_number)}_snp_k{kmer_size}.tsv"
-                kmers.sort()
+                kmers = OrderedDict(sorted(kmers.items()))
                 with open(output_file_name, "w", encoding="utf-8") as f:
-                    for kmer in kmers :
-                        line_output = f"{kmer[0]}\t{kmer[1]}\n"
+                    for kmer, id in kmers.items() :
+                        line_output = f"{kmer}\t{id}\n"
                         f.write(line_output)
-                kmers=[]
+                kmers={}
                 file_number += 1
 
 # Exporter les derniers kmers dans un fichier :        
 output_file_name = f"{output_dir}/{str(file_number)}_snp_k{kmer_size}.tsv"
-kmers.sort()
+#kmers.sort()
+kmers = OrderedDict(sorted(kmers.items()))
 with open(output_file_name, "w", encoding="utf-8") as f:
-    for kmer in kmers :
-        line_output = f"{kmer[0]}\t{kmer[1]}\n"
+    for kmer, id in kmers.items() :
+        line_output = f"{kmer}\t{id}\n"
         f.write(line_output)

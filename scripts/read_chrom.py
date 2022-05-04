@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# Extraire des kmers depuis la séquence de référence du chromosome
+# Extraire des kmers depuis la séquence de référence du chromosome directement, à partir des infos vcf ref snp
 
 import re
 import sys

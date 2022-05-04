@@ -3,14 +3,8 @@
 # Programme pour récupérer les séquences fasta et les mettre dans des fichiers séparés
 
 from hashlib import new
-import re
-import sys
 import argparse
-import os
 from Bio import SeqIO
-from numpy import equal
-from matplotlib.pyplot import close
-from pprint import pprint
 
 # Gestion des arguments
 parser = argparse.ArgumentParser()
