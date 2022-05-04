@@ -6,7 +6,7 @@ import os
 
 # Fetch rs_fasta files for all chromosomes from human_9606 in dbSNP
 server = "ftp.ncbi.nih.gov"
-path = "/snp/organisms/human_9606/rs_fasta/"
+path = "/snp/organisms/human_9606_b151_GRCh37p13/rs_fasta/"
 
 # Création de l'objet FTP avec le nom du server
 ftp = FTP('ftp.ncbi.nih.gov')

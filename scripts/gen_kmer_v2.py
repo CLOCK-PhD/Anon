@@ -22,16 +22,9 @@
 # Output = tsv : Séquence k-mer, ID, chromosome, position du SNP, position DU KMER
 # Problème avec les fichiers rs_ch.fas : pas de position du snp et du kmer
 
-# A FAIRE : Faire fonctionner avec plusieurs inputs (essayer parallélisation ?)
-#       IDEE : fournir un dossier en input et traiter tous les fichiers rs_ch.fas 
-#       REALITE : l'execution du programme prend beaucoup trop de temps
-# A FAIRE : LAST : Tri de tas des fichiers (autre programme ?)
-#       IDEE : parralléliser la tâche pendant la production des kmers ?
 # A FAIRE : Ajouter un message d'usage
 # A FAIRE : Docstring
 # A FAIRE : Préciser les types des arguments des fonctions
-# A FAIRE : Supprimer les doublons (avant ou après tri ?)
-#       IDEE : faire des dictionnaires plutôt que des listes ?
 # A FAIRE : Ajouter les infos manquantes :
 #       chromosome (facile)
 #       Position du snp
@@ -40,16 +33,12 @@
 #       Problème : ça risque d'être bien long.
 # A FAIRE : Intégrer l'allèle 1 qui n'était pas pris en compte
 # A FAIRE : Trouver d'autres trucs à faire
-# A FAIRE : Ne pas oublier que c'est pour produire des données et ne pas perdre trop de temps non plus
 
 import re
-import sys
 import argparse
 import os
 from typing import OrderedDict
 from Bio import SeqIO
-from numpy import equal
-from matplotlib.pyplot import close
 from pprint import pprint
 
 # Gestion des arguments
