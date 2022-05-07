@@ -22,7 +22,6 @@
 # Output = tsv : Séquence k-mer, ID, chromosome, position du SNP, position DU KMER
 # Problème avec les fichiers rs_ch.fas : pas de position du snp et du kmer
 
-# A FAIRE : Ajouter un message d'usage
 # A FAIRE : Docstring
 # A FAIRE : Préciser les types des arguments des fonctions
 # A FAIRE : Ajouter les infos manquantes :
@@ -45,6 +44,7 @@ from pprint import pprint
 parser = argparse.ArgumentParser()
 
 # Création des arguments
+parser = argparse.ArgumentParser(description='Génère les kmers à partir des snp des fichiers rs_fasta de dbSNP')
 parser.add_argument("-i", "--input", dest="rs_fasta_file", help = "rs_ch.fas input file")
 parser.add_argument("-k", "--kmer_size", dest="kmer_size", default=21, help="Select k-mer size")
 parser.add_argument("-n", dest="kmers_per_output_file", default=100000, help="Number of kmers per output file for the heap merge")
@@ -76,18 +76,23 @@ def extract_snp_var(seq_info):
 
 # Sélectionner la séquence à diviser en k-mers :
 def make_max_kmer(kmer_size, seq, snp_pos, seq_len):
+    #print(kmer_size)
     if snp_pos >= kmer_size : # cas ideal où len(maxkmer) = 2*kmer_size) -1
+        #print("maxkmer A")
         max_kmer = seq[snp_pos - kmer_size : snp_pos + kmer_size -1]
-        return max_kmer
+        #print(f"taille : {len(max_kmer)} - {max_kmer}")
+        return max_kmer.upper()
     else :
+        #print("maxkmer B")
         max_kmer = seq[0 : kmer_size + (snp_pos - 1)]
-        return max_kmer
+        #print(f"taille : {len(max_kmer)} - {max_kmer}")
+        return max_kmer.upper()
 
 # Fonction pour remplacer le snp du kmer par ses variations connues :
 def max_kmer_variations(max_kmer, snp_pos, snp_var, kmer_size):
-    max_kmers_list = []  
+    max_kmers_list = []
     if(snp_var != 0):
-        for snp in snp_var :
+        for snp in snp_var : # suppression des snp trop longs pour faire un kmer
             if len(snp) >= kmer_size:
                 snp_var.remove(snp)
         if len(max_kmer) == 2*kmer_size - 1:
@@ -96,15 +101,15 @@ def max_kmer_variations(max_kmer, snp_pos, snp_var, kmer_size):
                     max_kmer_var = max_kmer[:kmer_size - 1] + snp + max_kmer[kmer_size:]
                     max_kmers_list.append(max_kmer_var)
                 else : # cas du snp long
-                    max_kmer_var = max_kmer[len(snp)-1:kmer_size-1] + snp + max_kmer[kmer_size:len(max_kmer)-(len(snp)-1)]
+                    max_kmer_var = max_kmer[len(snp)//2 -1:kmer_size-1] + snp + max_kmer[kmer_size:len(max_kmer)-((len(snp)//2) + (len(snp))%2)]
                     max_kmers_list.append(max_kmer_var)
         else :
             for snp in snp_var:
                 if len(snp) == 1 :
-                    max_kmer_var = max_kmer[:snp_pos-1] + snp + max_kmer[kmer_size - snp_pos:]
+                    max_kmer_var = max_kmer[0:snp_pos-1] + snp + max_kmer[snp_pos:len(max_kmer)]
                     max_kmers_list.append(max_kmer_var)
                 else:
-                    max_kmer_var = max_kmer[:snp_pos-1] + snp + max_kmer[kmer_size - snp_pos:len(max_kmer)-(len(snp)-1)]
+                    max_kmer_var = max_kmer[:snp_pos-1] + snp + max_kmer[snp_pos:len(max_kmer)-(len(snp)-1)]
                     max_kmers_list.append(max_kmer_var)
     else :
         return max_kmers_list
@@ -142,8 +147,6 @@ with open(input_file) as handle :
         for kmer in record_kmer_list :
             # Ajouter les kmers à la liste des kmers
             if len(kmers) < kmers_per_file :
-                #kmer_id = (kmer, seq_rs)
-                #kmers.append(kmer_id)
                 kmers[kmer]=seq_rs
             # Exporter la liste quand on atteint un nombre de kmers dans la liste :
             if len(kmers) == kmers_per_file :
