@@ -14,7 +14,7 @@ import os
 from Bio import SeqIO
 from pprint import pprint
 
-# OK
+# Récupérer les informations contenues dans le VCF
 def get_vcf_line_info(line):
     description = line.split("\t")
     chrom = description[0]
@@ -33,8 +33,7 @@ def get_vcf_line_info(line):
         print(rs_id)
     return chrom, snp_ref, int(snp_pos), rs_id, snp_alt, vc
 
-
-# Récupérer le kmer_max pour SNV :
+# Récupérer les kmer_max pour SNV :
 def get_SNV_kmer_max(sequence, snp_pos:int, kmer_size:int, snp_alt):
     kmer_max_list = []
     # Cas classique : 1 nt changé en 1 autre nt
@@ -67,7 +66,7 @@ def get_DEL_kmer_max(sequence, snp_pos:int, kmer_size:int, snp_ref):
     kmer_max_list.append(kmer_max)
     return kmer_max_list
 
-# Récupérer le kmer_max pour INS
+# Récupérer les kmer_max pour INS
 # A FAIRE : Ajouter un log pour les cas rejetés
 def get_INS_kmer_max(sequence, snp_pos, kmer_size, snp_alt):
     # nt ajoutés après snp_pos
@@ -75,14 +74,16 @@ def get_INS_kmer_max(sequence, snp_pos, kmer_size, snp_alt):
     # la taille ne doit pas être plus grande que kmer_size
     # il peut y avoir plusieurs variations
     # Les variations peuvent être de taille différente
+    # fontcionne pour les DEL, INS +, DEL -
     kmer_max_list = []
     for alt in snp_alt:
         if len(alt) < kmer_size:
             l_kmer = sequence[snp_pos - kmer_size + len(alt) : snp_pos]
             #snp = sequence[snp_pos]
             r_kmer = sequence[snp_pos + 1 : snp_pos + kmer_size - (len(alt)-1)]
-            """print(f"Debut : {l_kmer} : {len(l_kmer)}")
-            print(f"SNP : {sequence[snp_pos]}")
+            """print(f"Séquence : {sequence[snp_pos - 20 : snp_pos + 1 + 20]}")
+            print(f"Debut : {l_kmer} : {len(l_kmer)}")
+            print(f"SNP : {sequence[snp_pos]} - Position : {snp_pos}")
             print(f"Insertion(s) : {alt} - longueur : {len(alt)}")
             print(f"{alt} - longueur : {len(alt)}")
             print(f"Fin : {r_kmer} : {len(r_kmer)}")"""
@@ -93,7 +94,7 @@ def get_INS_kmer_max(sequence, snp_pos, kmer_size, snp_alt):
             print(f"INS TOO LONG FOR KMER SIZE : {len(alt)}")
     return kmer_max_list
 
-# Récupérer le kmer_max pour MNV
+# Récupérer les kmer_max pour MNV
 # A FAIRE : Ajouter un log pour les cas rejetés
 def get_MNV_kmer_max(sequence, snp_ref, snp_pos, kmer_size:int, snp_alt):
     # plusieurs NT changés par un nombre égal de NT
@@ -118,16 +119,62 @@ def get_MNV_kmer_max(sequence, snp_ref, snp_pos, kmer_size:int, snp_alt):
         print(f"MNV TOO LONG FOR KMER SIZE : {len(snp_ref)}")
     return kmer_max_list
 
+# Récupérer les kmer_max pour INDEL
+def get_INDEL_kmer_max(sequence, snp_ref, snp_pos, snp_alt, kmer_size:int):
+    # Pire des cas, on peut tout avoir
+    #print(variant_class)
+    # La ref peut être plus grande que kmer_size
+    # les alt peuvent être plus grands que kmer_size
+    # on peut avoir des insertions et des délétions pour l'alt d'un même snp
+    # il existe des délétions simples
+    # il existe des insertions simples
+    # on ne retrouve pas de cas de MNV, et rarement des SNV
+    # Cas INS + : len(ref)>1 + len(alt)>len(ref)
+    # Cas INS + : peut se prendre comme une insertion depuis le snp_pos en fait
+    # Cas DEL - : len(ref)>1 + len(alt)<len(ref)
+    # Cas DEL - : Délétion avec ALT à la place de snp_ref dans le kmer_max
+    max_kmer_list = []
+    if len(snp_ref) > kmer_size :
+        print("INDEL REF IS TO LONG FOR K-MER SIZE")
+        return max_kmer_list
+    if len(snp_ref) == 1:
+        for alt in snp_alt:
+            if len(alt) == len(snp_ref):
+                print('\tSNV')
+                max_kmer_list += get_SNV_kmer_max(sequence, snp_pos, kmer_size, [alt])
+            else :
+                print("\tINS")
+                max_kmer_list += get_INS_kmer_max(sequence, snp_pos, kmer_size, [alt])
+    else :
+        for alt in snp_alt:
+            if len(alt) == 1 :
+                print("\tDEL")
+                #print(f"Séquence : {sequence[snp_pos - 20 : snp_pos + 1 + 20]}")
+                max_kmer_list += get_INS_kmer_max(sequence, snp_pos, kmer_size, [alt])
+            elif len(snp_ref) < len(alt) :
+                print("\tINS +")
+                max_kmer_list += get_INS_kmer_max(sequence, snp_pos, kmer_size, [alt])
+            elif len(snp_ref) > len(alt):
+                print("\tDEL -")
+                """l_kmer = sequence[snp_pos - kmer_size + len(alt) : snp_pos]
+                r_kmer = sequence[snp_pos + len(snp_ref) : snp_pos + len(l_kmer) + len(snp_ref)]
+                print(f"Séquence : {sequence[snp_pos - 20 : snp_pos + 1 + 20]}")
+                print(f"Debut : {l_kmer} : {len(l_kmer)}")
+                print(f"SNP : {sequence[snp_pos]}")
+                print(f"Insertion(s) : {alt} - longueur : {len(alt)}")
+                print(f"{alt} - longueur : {len(alt)}")
+                print(f"Fin : {r_kmer} : {len(r_kmer)}")
+                print(f"kmer_max : {l_kmer}{alt}{r_kmer}")
+                # essai avec INS :
+                print(f"TEST : {get_INS_kmer_max(sequence, snp_pos, kmer_size, [alt])}")"""
+                max_kmer_list += get_INS_kmer_max(sequence, snp_pos, kmer_size, [alt])
+            elif len(snp_ref) == len(alt):
+                print("\tMNV")
+                max_kmer_list += get_MNV_kmer_max(sequence, snp_pos, kmer_size, [alt])
+    return max_kmer_list
 
-# EN COURS - Extraction des kmer_max
-"""
-SNV : DONE
-DEL : DONE
-INDEL : en cours sa mère.
-INS : DONE
-MNV : OK
-Penser à donner les bonnes valeurs aux return
-"""
+
+# Extraction des kmer_max
 def get_kmer_from_pos(sequence, pos:int, variant_class:str, kmer_size:int, snp_ref, snp_alt):
     snp_pos = pos - 1
     kmer_max_list = []
@@ -136,23 +183,7 @@ def get_kmer_from_pos(sequence, pos:int, variant_class:str, kmer_size:int, snp_r
     elif variant_class == "DEL":
         return get_DEL_kmer_max(sequence, snp_pos, kmer_size, snp_ref)
     elif variant_class == "INDEL":
-        # Pire des cas, on peut tout avoir
-        #print(variant_class)
-        # La ref peut être plus grande que kmer_size
-        # les alt peuvent être plus grands que kmer_size
-        # on peut avoir des insertions et des délétions pour l'alt d'un même snp
-        # il existe des délétions simples
-        # il existe des insertions simples
-        # on ne retrouve pas de cas de MNV ou de SNV
-        if len(snp_ref) < kmer_size:
-            for alt in snp_alt:
-                if len(alt) < kmer_size:
-                    print("le champ du possible")
-                else :
-                    print(f"INDEL ALT TOO LONG FOR KMER SIZE : {len(alt)}")
-        else :
-            print(f"INDEL SNP TOO LONG FOR KMER SIZE : {len(snp_ref)}")
-        return "INDEL"
+        return get_INDEL_kmer_max(sequence, snp_ref, snp_pos, snp_alt, kmer_size)
     elif variant_class == "INS":
         return get_INS_kmer_max(sequence, snp_pos, kmer_size, snp_alt)
     elif variant_class == "MNV":
@@ -183,20 +214,8 @@ def main() :
             seq = record.seq
             #print(record.description)
 
-    #snp_pos_list = [10002, 10003, 10007, 10008]
-    #print(f"Position du SNP : {seq[nt_pos]}")
-    #print(f"kmer : {seq[nt_pos - kmer_size//2 : nt_pos + kmer_size//2]}")
     print(f"Longueur de la séquence : {len(seq)}")
 
-    # Récupère le kmer à la position indiquée dans la séquence
-    """for i in snp_pos_list:
-        snp_pos = i -1
-        print(f"Position du snp : {i}")
-        print(f"SNP : {seq[snp_pos]}")
-        print(f"kmer : {seq[snp_pos - kmer_size//2 : snp_pos + kmer_size//2 + 1]}")"""
-
-    ### EN COURS DE DEV : PACOURS DU VCF
-    # lire le vcf ref snp
     count = 0
 
     """n_ref1_vs_alt1 = 0      # SNV       A   ->  T
@@ -216,9 +235,32 @@ def main() :
                 #print(f"{chrom}\t{snp_ref}\t{snp_pos}\t{rs_id}\t{snp_alt}\t{vc}")
                 #print(rs_id)
                 #kmer_max = get_kmer_from_pos(seq, snp_pos, vc, kmer_size, snp_ref, snp_alt)
-                print(vc)
+                
+                # Test général
+                """print(f"{vc} - {rs_id}")
+                print(f"Référence : {snp_ref} - Position : {snp_pos}")
+                print(f"Variants : {snp_alt}")
                 print(get_kmer_from_pos(seq, snp_pos, vc, kmer_size, snp_ref, snp_alt))
+                print("---------------------------------------------")"""
                 #print(kmer_max)
+                
+                # TEST POUR INS - OK ?
+                """if vc == "INS":
+                    print("---------------------------------------------")
+                    print(f"{vc} - {rs_id}")
+                    print(f"Référence : {snp_ref}")
+                    print(f"Variants : {snp_alt}")
+                    print(get_kmer_from_pos(seq, snp_pos, vc, kmer_size, snp_ref, snp_alt))"""
+
+                # Test pour les INDELS - OK ?
+                if vc == "INDEL":
+                    print("---------------------------------------------")
+                    print(f"{vc} - {rs_id}")
+                    print(f"Référence : {snp_ref}")
+                    print(f"Variants : {snp_alt}")
+                    print(get_kmer_from_pos(seq, snp_pos, vc, kmer_size, snp_ref, snp_alt))
+
+
 
                 # Vérifications des possiblités entre ref et alt :
                 """if vc == "INDEL":
