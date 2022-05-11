@@ -23,6 +23,8 @@ def main():
         sys.stdout.write(line)"""
 
     # Suppression des doublons
+    header = "##Kmer_seq\trs_id\tchromosome\tsnp_position\tkmer_position"
+    sys.stdout.write(header)
     merged = heapq.merge(*files)
     prev_line = ""
     for line in merged:
@@ -32,6 +34,8 @@ def main():
         else:
             sys.stdout.write(line)
             prev_line = kmer
+
+    # Suppression des fichiers des kmers :
 
 
 if __name__ == '__main__':
