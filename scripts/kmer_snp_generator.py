@@ -8,7 +8,8 @@ Output : génère un dossier contenant des fichiers .tsv d'une taille définie (
 ##Kmer_seq   rs_id   chromosome  snp_position    kmer_position
 """
 
-# A FAIRE : Intégrer snp_position et kmer_position
+# A FAIRE : Intégrer le heap merge
+# A FAIRE : Supprimer les fichiers après merge
 # A FAIRE : logs pour les kmers rejetés
 # A FAIRE : Barre de progression
 # A FAIRE : Docstring
@@ -35,7 +36,7 @@ def get_vcf_line_info(line)-> tuple:
     #qual = description[5]
     #filter = description[6]
     info = description[7]
-    vc = "pas détecté"
+    #vc = "pas détecté"
     res = re.search("VC=(\w*)", info)
     if res:
         vc = res.group(1)
@@ -46,21 +47,25 @@ def get_vcf_line_info(line)-> tuple:
 # Récupérer les kmer_max pour SNV :
 def get_SNV_kmer_max(sequence:SeqIO, snp_pos:int, kmer_size:int, snp_alt:list) -> list:
     kmer_max_list = []
+    kmer_pos = snp_pos - kmer_size + 1
     l_kmer = sequence[snp_pos - kmer_size + 1 : snp_pos]
     r_kmer = sequence[snp_pos+1 : snp_pos + kmer_size]
     for alt in snp_alt :
         kmer_max = l_kmer + alt + r_kmer
-        kmer_max_list.append(kmer_max)
+        kmer_max_list.append((kmer_max, kmer_pos))
+    #print(f"Kmer pos :{snp_pos} - {kmer_size} + 1 = {kmer_pos}")
     return kmer_max_list
 
 # Récupérer le kmer_max pour DEL :
 def get_DEL_kmer_max(sequence:SeqIO, snp_pos:int, kmer_size:int, snp_ref:str) -> list:
     kmer_max_list = []
+    kmer_pos = snp_pos - kmer_size + 1
     l_kmer = sequence[snp_pos - kmer_size + 1 : snp_pos]
     snp = sequence[snp_pos]
     r_kmer = sequence[snp_pos + (len(snp_ref)) : snp_pos + kmer_size + len(snp_ref) -1]
     kmer_max = l_kmer + snp + r_kmer
-    kmer_max_list.append(kmer_max)
+    kmer_max_list.append((kmer_max, kmer_pos))
+    #print(f"Kmer pos :{snp_pos} - {kmer_size} + 1 = {kmer_pos}")
     return kmer_max_list
 
 # Récupérer les kmer_max pour INS
@@ -69,10 +74,12 @@ def get_INS_kmer_max(sequence:SeqIO, snp_pos:int, kmer_size:int, snp_alt:list) -
     kmer_max_list = []
     for alt in snp_alt:
         if len(alt) < kmer_size:
+            kmer_pos = snp_pos - kmer_size + len(alt)
             l_kmer = sequence[snp_pos - kmer_size + len(alt) : snp_pos]
             r_kmer = sequence[snp_pos + 1 : snp_pos + kmer_size - (len(alt)-1)]
             kmer_max = l_kmer + alt + r_kmer
-            kmer_max_list.append(kmer_max)
+            kmer_max_list.append((kmer_max, kmer_pos))
+            print(f"Kmer pos :{snp_pos} - {kmer_size} + {len(alt)} = {kmer_pos}")
         else:
             #print(f"INS TOO LONG FOR KMER SIZE : {len(alt)}")
             return kmer_max_list
@@ -83,11 +90,13 @@ def get_INS_kmer_max(sequence:SeqIO, snp_pos:int, kmer_size:int, snp_alt:list) -
 def get_MNV_kmer_max(sequence:SeqIO, snp_ref:str, snp_pos:int, kmer_size:int, snp_alt:list) -> list:
     kmer_max_list = []
     if len(snp_ref) < kmer_size:
+        kmer_pos = snp_pos - kmer_size + len(snp_ref)
         l_kmer = sequence[snp_pos - kmer_size + len(snp_ref): snp_pos]
         r_kmer = sequence[snp_pos + len(snp_ref) : snp_pos + kmer_size]
         for alt in snp_alt:
             kmer_max = l_kmer + alt + r_kmer
-            kmer_max_list.append(kmer_max)
+            kmer_max_list.append((kmer_max, kmer_pos))
+            #print(f"Kmer pos :{snp_pos} - {kmer_size} + {len(snp_ref)} = {kmer_pos}")
     else :
         #print(f"MNV TOO LONG FOR KMER SIZE : {len(snp_ref)}")
         return kmer_max_list
@@ -120,7 +129,8 @@ def get_INDEL_kmer_max(sequence:SeqIO, snp_ref:str, snp_pos:int, snp_alt:list, k
 def get_kmer_from_pos(sequence:SeqIO, pos:int, variant_class:str, kmer_size:int, snp_ref:str, snp_alt:list) -> list:
     snp_pos = pos - 1
     kmer_max_list = []
-    # Pour essayer de virer les kmers contenant des points
+
+    # Exclusion des kmers contenant des points
     if snp_ref == ".":
         return kmer_max_list
     for alt in snp_alt:
@@ -138,13 +148,14 @@ def get_kmer_from_pos(sequence:SeqIO, pos:int, variant_class:str, kmer_size:int,
     elif variant_class == "MNV":
         return get_MNV_kmer_max(sequence, snp_ref, snp_pos, kmer_size, snp_alt)
 
-# Découper le kmer_max
+# Découper le kmer_max pour récupérer les kmers et leurs positions
 def kmer_generator(kmer_size:int, kmer_to_cut:SeqIO) -> SeqIO:
     kmer_list = []
     for i in range(0, kmer_size, 1):
-        kmer = kmer_to_cut[i : i + kmer_size].upper()
-        if len(kmer) == kmer_size: # pour garder des kmer de taille voulue
+        kmer = (kmer_to_cut[0][i : i + kmer_size].upper(), int(kmer_to_cut[1]) + i)
+        if len(kmer[0]) == kmer_size: # pour garder des kmer de taille voulue
             kmer_list.append(kmer)
+    #pprint(f"kmer_list : \n{kmer_list}")
     return kmer_list
 
 def main() :
@@ -199,13 +210,13 @@ def main() :
                 # Output = tsv : Séquence k-mer, ID, chromosome, position du SNP, position DU KMER
                 for kmer in kmer_list :
                     if len(kmers) < kmers_per_file :
-                        kmers[kmer] = (rs_id, chrom)
+                        kmers[kmer] = (rs_id, chrom, snp_pos)
                     if len(kmers) == kmers_per_file :
                         output_file_name = f"{output_dir}/{str(file_number)}_snp_k{kmer_size}.tsv"
                         kmers = OrderedDict(sorted(kmers.items()))
                         with open(output_file_name, "w", encoding="utf-8") as f:
                             for kmer, values in kmers.items() :
-                                line_output = f"{kmer}\t{values[0]}\t{values[1]}\n"
+                                line_output = f"{kmer[0]}\t{values[0]}\t{values[1]}\t{values[2]}\t{kmer[1]}\n"
                                 f.write(line_output)
                         kmers={}
                         file_number += 1
@@ -218,7 +229,7 @@ def main() :
     kmers = OrderedDict(sorted(kmers.items()))
     with open(output_file_name, "w", encoding="utf-8") as f:
         for kmer, values in kmers.items() :
-            line_output = f"{kmer}\t{values[0]}\t{values[1]}\n"
+            line_output = f"{kmer[0]}\t{values[0]}\t{values[1]}\t{values[2]}\t{kmer[1]}\n"
             f.write(line_output)
 
 if __name__ == '__main__':
