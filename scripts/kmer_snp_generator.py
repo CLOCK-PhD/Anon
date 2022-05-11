@@ -13,8 +13,6 @@ Output : génère un dossier contenant des fichiers .tsv d'une taille définie (
 # A FAIRE : logs pour les kmers rejetés
 # A FAIRE : Barre de progression
 # A FAIRE : Docstring
-# A FAIRE : Préciser les types des arguments des fonctions
-# A FAIRE : s'occuper des kmers avec des N
 # A FAIRE : lire tous les chromosomes ?
 
 import re
@@ -41,6 +39,7 @@ def get_vcf_line_info(line)-> tuple:
     if res:
         vc = res.group(1)
     else:
+        vc = ""
         print(rs_id)
     return chrom, snp_ref, int(snp_pos), rs_id, snp_alt, vc
 
@@ -178,8 +177,13 @@ def main() :
     output_dir = args.output_dir
     ref = args.ref
 
-    # Créer le fichier de sortie
+    # Créer le dossier de sortie
     os.makedirs(output_dir)
+    # Dictionnaire contenant les kmers
+    kmers = {}
+    # Numéro du fichier de sortie :
+    file_number = 0
+
 
     # Récupérer la séquence du chromosome en mémoire
     seq = []
@@ -187,11 +191,7 @@ def main() :
         for record in SeqIO.parse(handle, "fasta"):
             seq = record.seq
 
-    count = 0 # Pour les testss
-    # Dictionnaire contenant les kmers
-    kmers = {}
-    # Numéro du fichier de sortie :
-    file_number = 0
+    #count = 0 # Pour les tests
 
     # Ouverture et parcours du fichier vcf de référence
     with open(ref, "r") as vcf:
@@ -206,13 +206,13 @@ def main() :
             # Place les kmers générés dans le dictionnaire :
             for kmer in kmer_list :
                 if len(kmers) < kmers_per_file :
-                    kmers[kmer] = (rs_id, chrom, snp_pos)
+                    kmers[kmer[0]] = (rs_id, chrom, snp_pos, kmer[1])
                 if len(kmers) == kmers_per_file :
                     output_file_name = f"{output_dir}/{str(file_number)}_snp_k{kmer_size}.tsv"
                     kmers = OrderedDict(sorted(kmers.items()))
                     with open(output_file_name, "w", encoding="utf-8") as f:
                         for kmer, values in kmers.items() :
-                            line_output = f"{kmer[0]}\t{values[0]}\t{values[1]}\t{values[2]}\t{kmer[1]}\n"
+                            line_output = f"{kmer}\t{values[0]}\t{values[1]}\t{values[2]}\t{values[3]}\n"
                             f.write(line_output)
                     kmers={}
                     file_number += 1
@@ -253,7 +253,7 @@ def main() :
     kmers = OrderedDict(sorted(kmers.items()))
     with open(output_file_name, "w", encoding="utf-8") as f:
         for kmer, values in kmers.items() :
-            line_output = f"{kmer[0]}\t{values[0]}\t{values[1]}\t{values[2]}\t{kmer[1]}\n"
+            line_output = f"{kmer}\t{values[0]}\t{values[1]}\t{values[2]}\t{values[3]}\n"
             f.write(line_output)
 
 if __name__ == '__main__':

@@ -8,6 +8,9 @@ import heapq
 import argparse
 import sys
 
+# A FAIRE : préciser un fichier de sortie pour éviter de tout supprimer
+# A FAIRE : ajouter une option pour supprimer tous les fichiers après le tri
+
 def main():
     parser = argparse.ArgumentParser(description='Merge multiple sorted files')
     parser.add_argument('files', metavar='files', type=str, nargs='+', help='input files')
@@ -23,7 +26,7 @@ def main():
         sys.stdout.write(line)"""
 
     # Suppression des doublons
-    header = "##Kmer_seq\trs_id\tchromosome\tsnp_position\tkmer_position"
+    header = "#Kmer_seq\trs_id\tchromosome\tsnp_position\tkmer_position\n"
     sys.stdout.write(header)
     merged = heapq.merge(*files)
     prev_line = ""
