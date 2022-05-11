@@ -79,7 +79,7 @@ def get_INS_kmer_max(sequence:SeqIO, snp_pos:int, kmer_size:int, snp_alt:list) -
             r_kmer = sequence[snp_pos + 1 : snp_pos + kmer_size - (len(alt)-1)]
             kmer_max = l_kmer + alt + r_kmer
             kmer_max_list.append((kmer_max, kmer_pos))
-            print(f"Kmer pos :{snp_pos} - {kmer_size} + {len(alt)} = {kmer_pos}")
+            #print(f"Kmer pos :{snp_pos} - {kmer_size} + {len(alt)} = {kmer_pos}")
         else:
             #print(f"INS TOO LONG FOR KMER SIZE : {len(alt)}")
             return kmer_max_list
@@ -196,6 +196,30 @@ def main() :
     # Ouverture et parcours du fichier vcf de référence
     with open(ref, "r") as vcf:
         for line in vcf:
+            chrom, snp_ref, snp_pos, rs_id, snp_alt, vc = get_vcf_line_info(line)
+                
+            # Test pour générer les kmers depuis les kmers_max
+            kmer_max_list = get_kmer_from_pos(seq, snp_pos, vc, kmer_size, snp_ref, snp_alt)
+            for kmer_max in kmer_max_list:
+                kmer_list = kmer_generator(kmer_size, kmer_max)
+
+            # Place les kmers générés dans le dictionnaire :
+            for kmer in kmer_list :
+                if len(kmers) < kmers_per_file :
+                    kmers[kmer] = (rs_id, chrom, snp_pos)
+                if len(kmers) == kmers_per_file :
+                    output_file_name = f"{output_dir}/{str(file_number)}_snp_k{kmer_size}.tsv"
+                    kmers = OrderedDict(sorted(kmers.items()))
+                    with open(output_file_name, "w", encoding="utf-8") as f:
+                        for kmer, values in kmers.items() :
+                            line_output = f"{kmer[0]}\t{values[0]}\t{values[1]}\t{values[2]}\t{kmer[1]}\n"
+                            f.write(line_output)
+                    kmers={}
+                    file_number += 1
+
+    # Boucle pour les tests
+    """with open(ref, "r") as vcf:
+        for line in vcf:
             # Boucle pour les tests :
             # ChY : 2375594
             if count <= 10:
@@ -222,7 +246,7 @@ def main() :
                         file_number += 1
                 count += 1
             else:
-                break
+                break"""
     
     # Exporter les derniers kmers dans un fichier :        
     output_file_name = f"{output_dir}/{str(file_number)}_snp_k{kmer_size}.tsv"
