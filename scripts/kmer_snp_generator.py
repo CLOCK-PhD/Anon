@@ -1,27 +1,35 @@
 #!/usr/bin/python3
 
 """
-Extraire des kmers depuis la séquence de référence du chromosome directement, 
+Extraire des k-mers de taille voulue (k=21 par défaut) depuis la séquence de référence du chromosome directement, 
 à partir des infos vcf du fichier ref snp
 
-Output : génère un dossier contenant des fichiers .tsv d'une taille définie (default = 100k):
-##Kmer_seq   rs_id   chromosome  snp_position    kmer_position
+Génère des fichiers .tsv contenant 100000 kmers (valeur par défaut) triés par ordre lexicographique
+avec les informations suivantes :
+Kmer_seq   rs_id   chromosome  snp_position    kmer_position
+
+A cause du nombre de fichiers qui peuvent être produits, tous les 1000 fichiers .tsv,
+un merge est réalisé pour les trier dans un nouveau fichier.
+
+Tous les fichiers sont ensuite à nouveau triés et réunis dans un fichier final_merge.tsv
 """
 
-# A FAIRE : Intégrer le heap merge
-# A FAIRE : Supprimer les fichiers après merge
-# A FAIRE : logs pour les kmers rejetés
-# A FAIRE : Barre de progression
 # A FAIRE : Docstring
-# A FAIRE : lire tous les chromosomes ?
+# ? A FAIRE : logs pour les kmers rejetés
+# ? A FAIRE : lire tous les chromosomes
+# ? A FAIRE : paralléliser le merge pendant la génération de kmer
+# ? A FAIRE : Créer un fichier contenant tous les rs_id des kmers supprimés
+# IDÉE : Barre de progression
 
 import re
 import sys
 import argparse
 import os
+import heapq
 from Bio import SeqIO
 from typing import OrderedDict
 from pprint import pprint
+from os.path import isfile, join
 
 # Récupérer les informations contenues dans le VCF
 def get_vcf_line_info(line)-> tuple:
@@ -57,14 +65,16 @@ def get_SNV_kmer_max(sequence:SeqIO, snp_pos:int, kmer_size:int, snp_alt:list) -
 
 # Récupérer le kmer_max pour DEL :
 def get_DEL_kmer_max(sequence:SeqIO, snp_pos:int, kmer_size:int, snp_ref:str) -> list:
+    #print("DEL")
     kmer_max_list = []
-    kmer_pos = snp_pos - kmer_size + 1
+    kmer_pos = int(snp_pos - kmer_size + 1)
     l_kmer = sequence[snp_pos - kmer_size + 1 : snp_pos]
     snp = sequence[snp_pos]
     r_kmer = sequence[snp_pos + (len(snp_ref)) : snp_pos + kmer_size + len(snp_ref) -1]
     kmer_max = l_kmer + snp + r_kmer
     kmer_max_list.append((kmer_max, kmer_pos))
     #print(f"Kmer pos :{snp_pos} - {kmer_size} + 1 = {kmer_pos}")
+    #print(kmer_max_list)
     return kmer_max_list
 
 # Récupérer les kmer_max pour INS
@@ -149,6 +159,7 @@ def get_kmer_from_pos(sequence:SeqIO, pos:int, variant_class:str, kmer_size:int,
 
 # Découper le kmer_max pour récupérer les kmers et leurs positions
 def kmer_generator(kmer_size:int, kmer_to_cut:SeqIO) -> SeqIO:
+    #print(kmer_to_cut)
     kmer_list = []
     for i in range(0, kmer_size, 1):
         kmer = (kmer_to_cut[0][i : i + kmer_size].upper(), int(kmer_to_cut[1]) + i)
@@ -156,6 +167,31 @@ def kmer_generator(kmer_size:int, kmer_to_cut:SeqIO) -> SeqIO:
             kmer_list.append(kmer)
     #pprint(f"kmer_list : \n{kmer_list}")
     return kmer_list
+
+# Merge des fichiers kmers
+def merge_kmers(output_dir:str, merged_file_number, kmer_files:list)-> str:
+    files = [open(filename, "r") for filename in kmer_files]
+    output_merged_file_name = f"{output_dir}/{str(merged_file_number)}_merge.tsv"
+    merged = heapq.merge(*files)
+    prev_line = ""
+    print("\tMerging files...")
+    with open(output_merged_file_name, "w", encoding="utf-8") as f:
+        for line in merged:
+            kmer = line.split("\t")[0]
+            if kmer == prev_line :
+                prev_line = kmer
+            else:
+                f.write(line)
+                prev_line = kmer
+    print("\tMerging done")
+    
+    # Suppression des fichiers
+    print("\t\tDeleting kmer files...")
+    for kmer_file_name in kmer_files :
+        os.remove(f"{kmer_file_name}")
+    print("\t\tk-mer files deleted")
+
+    return output_merged_file_name
 
 def main() :
     # Gestion des arguments
@@ -168,6 +204,7 @@ def main() :
     parser.add_argument("-k", "--kmer_size", dest="kmer_size", default=21, help="Select k-mer size")
     parser.add_argument("-n", dest="kmers_per_output_file", default=100000, help="Number of kmers per output file for the heap merge")
     parser.add_argument("-o", "--ouput", dest="output_dir", default="generated_kmers", help="Output folder name")
+    parser.add_argument("-b", "--batch_size", dest="batch_size", default=1000, type=int, help="Limit of k-mer files to merge during execution")
 
     # Récupération des valeurs des arguments et attribution
     args = parser.parse_args()
@@ -176,14 +213,18 @@ def main() :
     kmers_per_file = int(args.kmers_per_output_file)
     output_dir = args.output_dir
     ref = args.ref
+    batch_size = args.batch_size
 
     # Créer le dossier de sortie
     os.makedirs(output_dir)
     # Dictionnaire contenant les kmers
     kmers = {}
-    # Numéro du fichier de sortie :
+    # Numéro du fichier de sortie
     file_number = 0
-
+    # Variables pour le merge
+    output_file_list = []   # Liste des fichiers de kmers à merge
+    merged_file_number = 0  # Numéro du fichier mergé
+    merged_file_list_for_final_merge = []
 
     # Récupérer la séquence du chromosome en mémoire
     seq = []
@@ -191,17 +232,34 @@ def main() :
         for record in SeqIO.parse(handle, "fasta"):
             seq = record.seq
 
-    #count = 0 # Pour les tests
-
-    # Ouverture et parcours du fichier vcf de référence
+    # Ouverture et parcours du fichier vcf de référence - OK
+    # En attente de l'inclusion du heap merge
+    print("Generating k-mers...")
+    print(f"Generatinf k-mer files : batch {merged_file_number}")
     with open(ref, "r") as vcf:
         for line in vcf:
+            # Merge et suppression des fichiers
+            if len(output_file_list) == batch_size :
+                print(f"\tMerging k-mers batch {merged_file_number}")
+                # Merge les fichiers de output_file_list
+                merged_file_list_for_final_merge.append(merge_kmers(output_dir, merged_file_number, output_file_list))
+                # Incrémentation du nom du fichier des kmers mergés
+                merged_file_number += 1
+                # Réinitialisation de la liste des fichiers à merge
+                output_file_list = []
+                print(f"Generating k-mer files : batch {merged_file_number}")
+
             chrom, snp_ref, snp_pos, rs_id, snp_alt, vc = get_vcf_line_info(line)
                 
             # Test pour générer les kmers depuis les kmers_max
             kmer_max_list = get_kmer_from_pos(seq, snp_pos, vc, kmer_size, snp_ref, snp_alt)
             for kmer_max in kmer_max_list:
                 kmer_list = kmer_generator(kmer_size, kmer_max)
+
+            if vc == "DEL":
+                for kmer in kmer_list:
+                    if len(kmer[0]) < kmer_size:
+                        print(f"help + {rs_id}")
 
             # Place les kmers générés dans le dictionnaire :
             for kmer in kmer_list :
@@ -214,7 +272,10 @@ def main() :
                         for kmer, values in kmers.items() :
                             line_output = f"{kmer}\t{values[0]}\t{values[1]}\t{values[2]}\t{values[3]}\n"
                             f.write(line_output)
+                    # Réinitialisation du dictionnaire des kmers
                     kmers={}
+                    # Ajout du nom de fichier dans la liste des fichiers à merge
+                    output_file_list.append(output_file_name)
                     file_number += 1
 
     # Boucle pour les tests
@@ -222,7 +283,16 @@ def main() :
         for line in vcf:
             # Boucle pour les tests :
             # ChY : 2375594
-            if count <= 10:
+            
+            # Merge et suppression des fichiers
+            if len(output_file_list) == 10 :
+                # Merge les fichiers de output_file_list
+                merged_file_list_for_final_merge.append(merge_kmers(output_dir, merged_file_number, output_file_list))
+                # Incrémentation du nom du fichier des kmers mergés
+                merged_file_number += 1
+                # Réinitialisation de la liste des fichiers à merge
+                output_file_list = []
+            if count <= 100000:
                 chrom, snp_ref, snp_pos, rs_id, snp_alt, vc = get_vcf_line_info(line)
                 
                 # Test pour générer les kmers depuis les kmers_max
@@ -242,19 +312,32 @@ def main() :
                             for kmer, values in kmers.items() :
                                 line_output = f"{kmer[0]}\t{values[0]}\t{values[1]}\t{values[2]}\t{kmer[1]}\n"
                                 f.write(line_output)
+                        # Réinitialisation du dictionnaire des kmers
                         kmers={}
+                        # Ajout du nom de fichier dans la liste des fichiers à merge
+                        output_file_list.append(output_file_name)
                         file_number += 1
                 count += 1
             else:
                 break"""
     
-    # Exporter les derniers kmers dans un fichier :        
+    # Ajouter les derniers fichiers de kmers dans la liste du merge final
+    merged_file_list_for_final_merge += output_file_list
+    # Exporter les derniers kmers dans un fichier
     output_file_name = f"{output_dir}/{str(file_number)}_snp_k{kmer_size}.tsv"
     kmers = OrderedDict(sorted(kmers.items()))
     with open(output_file_name, "w", encoding="utf-8") as f:
         for kmer, values in kmers.items() :
             line_output = f"{kmer}\t{values[0]}\t{values[1]}\t{values[2]}\t{values[3]}\n"
             f.write(line_output)
+        # Ajout du dernier fichier à la liste du merge final
+        merged_file_list_for_final_merge.append(output_file_name)
+
+    # Merge des derniers fichiers
+    print("Final merge...")
+    merge_kmers(output_dir, "final", merged_file_list_for_final_merge)
+
+    print("All k-mers merged")
 
 if __name__ == '__main__':
     main()

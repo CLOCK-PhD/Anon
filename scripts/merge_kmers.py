@@ -26,8 +26,8 @@ def main():
         sys.stdout.write(line)"""
 
     # Suppression des doublons
-    header = "#Kmer_seq\trs_id\tchromosome\tsnp_position\tkmer_position\n"
-    sys.stdout.write(header)
+    #header = "#Kmer_seq\trs_id\tchromosome\tsnp_position\tkmer_position\n"
+    #sys.stdout.write(header)
     merged = heapq.merge(*files)
     prev_line = ""
     for line in merged:
