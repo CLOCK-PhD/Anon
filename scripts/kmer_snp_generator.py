@@ -78,7 +78,6 @@ def get_DEL_kmer_max(sequence:SeqIO, snp_pos:int, kmer_size:int, snp_ref:str) ->
     return kmer_max_list
 
 # Récupérer les kmer_max pour INS
-# A FAIRE : Ajouter un log pour les cas rejetés
 def get_INS_kmer_max(sequence:SeqIO, snp_pos:int, kmer_size:int, snp_alt:list) -> list:
     kmer_max_list = []
     for alt in snp_alt:
@@ -95,7 +94,6 @@ def get_INS_kmer_max(sequence:SeqIO, snp_pos:int, kmer_size:int, snp_alt:list) -
     return kmer_max_list
 
 # Récupérer les kmer_max pour MNV
-# A FAIRE : Ajouter un log pour les cas rejetés
 def get_MNV_kmer_max(sequence:SeqIO, snp_ref:str, snp_pos:int, kmer_size:int, snp_alt:list) -> list:
     kmer_max_list = []
     if len(snp_ref) < kmer_size:
@@ -112,7 +110,6 @@ def get_MNV_kmer_max(sequence:SeqIO, snp_ref:str, snp_pos:int, kmer_size:int, sn
     return kmer_max_list
 
 # Récupérer les kmer_max pour INDEL
-# A FAIRE : Ajouter un log pour les cas rejetés
 def get_INDEL_kmer_max(sequence:SeqIO, snp_ref:str, snp_pos:int, snp_alt:list, kmer_size:int) -> list:
     max_kmer_list = []
     if len(snp_ref) > kmer_size :
@@ -232,10 +229,9 @@ def main() :
         for record in SeqIO.parse(handle, "fasta"):
             seq = record.seq
 
-    # Ouverture et parcours du fichier vcf de référence - OK
-    # En attente de l'inclusion du heap merge
+    # Ouverture et parcours du fichier vcf de référence
     print("Generating k-mers...")
-    print(f"Generatinf k-mer files : batch {merged_file_number}")
+    print(f"Generating k-mer files : batch {merged_file_number}")
     with open(ref, "r") as vcf:
         for line in vcf:
             # Merge et suppression des fichiers
@@ -251,17 +247,12 @@ def main() :
 
             chrom, snp_ref, snp_pos, rs_id, snp_alt, vc = get_vcf_line_info(line)
                 
-            # Test pour générer les kmers depuis les kmers_max
+            # Générer les kmers depuis les kmers_max
             kmer_max_list = get_kmer_from_pos(seq, snp_pos, vc, kmer_size, snp_ref, snp_alt)
             for kmer_max in kmer_max_list:
                 kmer_list = kmer_generator(kmer_size, kmer_max)
 
-            if vc == "DEL":
-                for kmer in kmer_list:
-                    if len(kmer[0]) < kmer_size:
-                        print(f"help + {rs_id}")
-
-            # Place les kmers générés dans le dictionnaire :
+            # Place les kmers générés dans le dictionnaire
             for kmer in kmer_list :
                 if len(kmers) < kmers_per_file :
                     kmers[kmer[0]] = (rs_id, chrom, snp_pos, kmer[1])
