@@ -15,10 +15,19 @@ Tous les fichiers sont ensuite à nouveau triés et réunis dans un fichier fina
 """
 
 # A FAIRE : Docstring
-# ? A FAIRE : logs pour les kmers rejetés
-# ? A FAIRE : lire tous les chromosomes
-# ? A FAIRE : paralléliser le merge pendant la génération de kmer
+# A FAIRE : Lister les k-mers en double et leur nombre
 # ? A FAIRE : Créer un fichier contenant tous les rs_id des kmers supprimés
+# ? A FAIRE : logs pour les kmers rejetés
+# ? A FAIRE : lire tous les chromosomes pour lancer le programme en une fois
+"""
+    - Détecter les chromosomes différents
+    - Créer un fichier séparé pour chaque chromosome
+    - Exécuter le programme pour chaque
+    Idée :
+    - Paralléliser les exécutions pour faire plusieurs chromosomes en même temps
+    - Implique de parcourir le fichier vcf une première fois pour lister tous les chromosomes différents
+"""
+# ? A FAIRE : paralléliser le merge pendant la génération de kmer
 # IDÉE : Barre de progression
 
 import re
