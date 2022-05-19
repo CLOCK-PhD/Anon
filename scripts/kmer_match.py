@@ -71,5 +71,12 @@ def main():
 
     print("le chat")
 
+    # Test sur l'ouverture du fichier k-mer
+    with open("../data/kmer_snp/ch22/final_merge.tsv", "r") as kmer_file :
+        print("kmer file opened")
+        """for line in kmer_file:
+            print(line.split("\t")[0])"""
+        # Première partie des tests pour voir si on peut faire tourner avec le fichier
+
 if __name__ == "__main__" :
     main()
