@@ -19,7 +19,7 @@ Tous les fichiers sont ensuite à nouveau triés et réunis dans un fichier fina
 # Intégrer un index de k-mer en préfixe/suffixe.
 # On va commencer les tests avec un préfixe de longueur 5 (soit 1024 fichiers outputs) sur le chrY
 
-Idée : Une fois les merges partiels réalisés, on va réaliser l'index au lieu de produire le fichier unique
+Idée : Une fois les merges partiels réalisés, on va réaliser l'index préfixe au lieu de produire le fichier unique
 qui est normalement crée.
 
 Problème à régler : dans le cas où on n'a qu'un seul fichier à la fin (par exemple si on a un nombre de fichiers
@@ -35,9 +35,11 @@ Idée : On peut générer les fichiers en amont avec des fonctions de recombinai
 tous les noms possibles des suffixes, puis ajouter les kmers dans ces fichiers si leur préfixe correspond.
 Une fois le merge final réalisé, on va chercher les fichiers vides et les supprimer.
 
-Idée 2 : Créer les fichiers à la volée en fonction de leur préfixe et les remplir comme ça.
+APPROCHE :
+- Générer les merges
+- Générer les fichiers préfixes
+- Remplir les fichiers avec les fichiers merge
 
-# A FAIRE : Docstring
 # A FAIRE : Lister les k-mers en double et leur nombre
 # ? A FAIRE : Créer un fichier contenant tous les rs_id des kmers supprimés
 # ? A FAIRE : logs pour les kmers rejetés
@@ -63,9 +65,25 @@ from Bio import SeqIO
 from typing import OrderedDict
 from pprint import pprint
 from os.path import isfile, join
+from itertools import product
 
 # Récupérer les informations contenues dans le VCF
 def get_vcf_line_info(line)-> tuple:
+    """Récupère les informations contenues dans chaque ligne du fichier VCF de SNPdb.
+    Retourne un tuple qui contient dans l'ordre :
+        - chrom (str):          Nom du chromosome
+        - snp_ref (str):        SNP de référence
+        - snp_pos (int) :       Position du SNP dans le chromosome
+        - rs_id (str):          Identifiant du SNP
+        - snp_alt (list(str)):  Liste contenant toutes les variations connues du SNP
+        - vc (str):             Variation Class, le type de variations 
+
+    Parameters :
+        line: Ligne du fichier vcf
+
+    Returns:
+        tuple: chrom(str), snp_ref(str), snp_pos(int), rs_id(str), snp_alt(list(str)), vc(str)
+    """
     description = line.split("\t")
     chrom = description[0]
     snp_pos = description[1]
@@ -86,6 +104,18 @@ def get_vcf_line_info(line)-> tuple:
 
 # Récupérer les kmer_max pour SNV :
 def get_SNV_kmer_max(sequence:SeqIO, snp_pos:int, kmer_size:int, snp_alt:list) -> list:
+    """Pour un SNV : récupère les k-mers max dans une liste, pour chaque variation possible.
+    Ces k-mers max sont utilisés pour générer tous les k-mers des SNP.
+
+    Parameters:
+        sequence (SeqIO):   Séquence de référence dans laquelle effectuer les opérations de recherche
+        snp_pos (int):      Position du SNP dans la séquence de référence
+        kmer_size (int):    Taille du k-mer
+        snp_alt(list(str)): Liste contenant les variations du SNP
+
+    Returns:
+    list:   Liste contenant les différents k-mers de taille maximale pour chaque variation.
+    """
     kmer_max_list = []
     kmer_pos = snp_pos - kmer_size + 1
     l_kmer = sequence[snp_pos - kmer_size + 1 : snp_pos]
@@ -93,12 +123,23 @@ def get_SNV_kmer_max(sequence:SeqIO, snp_pos:int, kmer_size:int, snp_alt:list) -
     for alt in snp_alt :
         kmer_max = l_kmer + alt + r_kmer
         kmer_max_list.append((kmer_max, kmer_pos))
-    #print(f"Kmer pos :{snp_pos} - {kmer_size} + 1 = {kmer_pos}")
     return kmer_max_list
 
 # Récupérer le kmer_max pour DEL :
 def get_DEL_kmer_max(sequence:SeqIO, snp_pos:int, kmer_size:int, snp_ref:str) -> list:
-    #print("DEL")
+    """Pour une délétion : récupère le k-mers max dans une liste.
+    Ce k-mers max est utilisé pour générer tous les k-mers des SNP.
+
+    Parameters:
+        sequence (SeqIO):   Séquence de référence dans laquelle effectuer les opérations de recherche
+        snp_pos (int):      Position du SNP dans la séquence de référence
+        kmer_size (int):    Taille du k-mer
+        snp_ref(str):       SNP de référence
+
+    Returns:
+        list:   Liste contenant le k-mers max.
+    
+    """
     kmer_max_list = []
     kmer_pos = int(snp_pos - kmer_size + 1)
     l_kmer = sequence[snp_pos - kmer_size + 1 : snp_pos]
@@ -106,12 +147,22 @@ def get_DEL_kmer_max(sequence:SeqIO, snp_pos:int, kmer_size:int, snp_ref:str) ->
     r_kmer = sequence[snp_pos + (len(snp_ref)) : snp_pos + kmer_size + len(snp_ref) -1]
     kmer_max = l_kmer + snp + r_kmer
     kmer_max_list.append((kmer_max, kmer_pos))
-    #print(f"Kmer pos :{snp_pos} - {kmer_size} + 1 = {kmer_pos}")
-    #print(kmer_max_list)
     return kmer_max_list
 
 # Récupérer les kmer_max pour INS
 def get_INS_kmer_max(sequence:SeqIO, snp_pos:int, kmer_size:int, snp_alt:list) -> list:
+    """Pour une insertion : récupère les k-mers max dans une liste, pour chaque variation possible.
+    Ces k-mers max sont utilisés pour générer tous les k-mers des SNP.
+
+    Parameters:
+        sequence (SeqIO):   Séquence de référence dans laquelle effectuer les opérations de recherche
+        snp_pos (int):      Position du SNP dans la séquence de référence
+        kmer_size (int):    Taille du k-mer
+        snp_alt(list(str)): Liste contenant les variations du SNP
+
+    Returns:
+        list:   Liste contenant les différents k-mers de taille maximale pour chaque variation.
+    """
     kmer_max_list = []
     for alt in snp_alt:
         if len(alt) < kmer_size:
@@ -120,7 +171,6 @@ def get_INS_kmer_max(sequence:SeqIO, snp_pos:int, kmer_size:int, snp_alt:list) -
             r_kmer = sequence[snp_pos + 1 : snp_pos + kmer_size - (len(alt)-1)]
             kmer_max = l_kmer + alt + r_kmer
             kmer_max_list.append((kmer_max, kmer_pos))
-            #print(f"Kmer pos :{snp_pos} - {kmer_size} + {len(alt)} = {kmer_pos}")
         else:
             #print(f"INS TOO LONG FOR KMER SIZE : {len(alt)}")
             return kmer_max_list
@@ -128,6 +178,19 @@ def get_INS_kmer_max(sequence:SeqIO, snp_pos:int, kmer_size:int, snp_alt:list) -
 
 # Récupérer les kmer_max pour MNV
 def get_MNV_kmer_max(sequence:SeqIO, snp_ref:str, snp_pos:int, kmer_size:int, snp_alt:list) -> list:
+    """Pour un MNV : récupère les k-mers max dans une liste, pour chaque variation possible.
+    Ces k-mers max sont utilisés pour générer tous les k-mers des SNP.
+
+    Parameters:
+        sequence (SeqIO):   Séquence de référence dans laquelle effectuer les opérations de recherche
+        snp_ref (str):      SNP de référence
+        snp_pos (int):      Position du SNP dans la séquence de référence
+        kmer_size (int):    Taille du k-mer
+        snp_alt(list(str)): Liste contenant les variations du SNP
+
+    Returns:
+        list:   Liste contenant les différents k-mers de taille maximale pour chaque variation.
+    """
     kmer_max_list = []
     if len(snp_ref) < kmer_size:
         kmer_pos = snp_pos - kmer_size + len(snp_ref)
@@ -136,7 +199,6 @@ def get_MNV_kmer_max(sequence:SeqIO, snp_ref:str, snp_pos:int, kmer_size:int, sn
         for alt in snp_alt:
             kmer_max = l_kmer + alt + r_kmer
             kmer_max_list.append((kmer_max, kmer_pos))
-            #print(f"Kmer pos :{snp_pos} - {kmer_size} + {len(snp_ref)} = {kmer_pos}")
     else :
         #print(f"MNV TOO LONG FOR KMER SIZE : {len(snp_ref)}")
         return kmer_max_list
@@ -144,6 +206,19 @@ def get_MNV_kmer_max(sequence:SeqIO, snp_ref:str, snp_pos:int, kmer_size:int, sn
 
 # Récupérer les kmer_max pour INDEL
 def get_INDEL_kmer_max(sequence:SeqIO, snp_ref:str, snp_pos:int, snp_alt:list, kmer_size:int) -> list:
+    """Pour un INDEL : récupère les k-mers max dans une liste, pour chaque variation possible.
+    Ces k-mers max sont utilisés pour générer tous les k-mers des SNP.
+
+    Parameters:
+        sequence (SeqIO):   Séquence de référence dans laquelle effectuer les opérations de recherche
+        snp_ref (str):      SNP de référence
+        snp_pos (int):      Position du SNP dans la séquence de référence
+        snp_alt(list(str)): Liste contenant les variations du SNP
+        kmer_size (int):    Taille du k-mer
+
+    Returns:
+        list:   Liste contenant les différents k-mers de taille maximale pour chaque variation.
+    """
     max_kmer_list = []
     if len(snp_ref) > kmer_size :
         #print("INDEL REF IS TO LONG FOR K-MER SIZE")
@@ -166,6 +241,21 @@ def get_INDEL_kmer_max(sequence:SeqIO, snp_ref:str, snp_pos:int, snp_alt:list, k
 
 # Extraction des kmer_max
 def get_kmer_from_pos(sequence:SeqIO, pos:int, variant_class:str, kmer_size:int, snp_ref:str, snp_alt:list) -> list:
+    """Génère le k-mer max en fonction de la classe de variant en appelant une fonction spécifique.
+    Retourne une liste contenant les k-mers max.
+
+    Parameters:
+        sequence (SeqIO):   Séquence de référence dans laquelle effectuer les opérations de recherche
+        pos (int):          Position du SNP dans la séquence de référence
+        variant_class(str): Classe de variation pour l'appel à la fonction de génération de kmer_max
+        kmer_size (int):    Taille du k-mer
+        snp_ref (str):      SNP de référence
+        snp_alt(list(str)): Liste contenant les variations du SNP
+
+    Returns:
+        list:   Liste contenant les différents k-mers de taille maximale pour chaque variation.
+
+    """
     snp_pos = pos - 1
     kmer_max_list = []
 
@@ -188,7 +278,17 @@ def get_kmer_from_pos(sequence:SeqIO, pos:int, variant_class:str, kmer_size:int,
         return get_MNV_kmer_max(sequence, snp_ref, snp_pos, kmer_size, snp_alt)
 
 # Découper le kmer_max pour récupérer les kmers et leurs positions
-def kmer_generator(kmer_size:int, kmer_to_cut:SeqIO) -> SeqIO:
+def kmer_generator(kmer_size:int, kmer_to_cut:SeqIO) -> list:
+    """Génère les k-mers de taille voulue à partir des k-mers max.
+    Retourne une liste contenant tous les k-mers.
+
+    Parameters :
+        kmer_size (int):    Taille du k-mer
+        kmer_to_cut(SeqIO): Séquence du k-mer max à découper en k-mers
+
+    Returns:
+        list:   Liste contenant tous les k-mers
+    """
     #print(kmer_to_cut)
     kmer_list = []
     for i in range(0, kmer_size, 1):
@@ -200,6 +300,18 @@ def kmer_generator(kmer_size:int, kmer_to_cut:SeqIO) -> SeqIO:
 
 # Merge des fichiers kmers
 def merge_kmers(output_dir:str, merged_file_number, kmer_files:list)-> str:
+    """Fonction qui effectue un heap merge des fichiers contenant les k-mers en un fichier unique trié.
+    Supprime les fichiers fournis en entrée après le tri et la fusion.
+    Retourne le nom du fichier contenant le résultat de la fusion.
+
+    Parameters :
+        output_dir (str):   Dossier de sortie où sont produits les fichiers
+        merged_file_number: Numéro du fichier de sortie
+        kmer_files (list):  Liste contenant tous les fichiers des k-mers à fusionner
+
+    Returns:
+        output_merged_file_name (str):  Nom du fichier de fusion des k-mers
+    """
     files = [open(filename, "r") for filename in kmer_files]
     output_merged_file_name = f"{output_dir}/{str(merged_file_number)}_merge.tsv"
     merged = heapq.merge(*files)
@@ -222,6 +334,21 @@ def merge_kmers(output_dir:str, merged_file_number, kmer_files:list)-> str:
     print("\t\tk-mer files deleted")
 
     return output_merged_file_name
+
+# Générer les préfixes
+def genPrefixes(length:int) -> list:
+    """Génère une liste qui contient tous les préfixes possibles pour une longueur de préfixe donnée.
+
+    Parameters:
+        length (int):   Longueur du préfixe
+
+    Returns:
+        prefix_list (list): Liste des préfixes
+    """
+    prefix_list = []
+    for pref in list(product("ACGT", repeat=length)):
+        prefix_list.append("".join(pref))
+    return prefix_list
 
 def main() :
     # Gestion des arguments
