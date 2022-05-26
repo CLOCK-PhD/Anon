@@ -1,17 +1,14 @@
 #!/usr/bin/python3
 
 """
-Programme pour effectuer une recherche exacte des k-mers produits par le programme kmer_snp_generator.py
-sur une séquence de référence.
+Modification de la problématique :
+Rechercher parmis les k-mers d'une séquence choisie s'ils sont présents dans l'index des kmers SNP.
 
-EN COURS DE DEVELOPPEMENT
-
-Objectifs :
-1. Retrouver les k-mers dans la référence
-2. Identifier les k-mers uniques
-3. Récupérer les k-mers uniques dans un fichier de sortie
-Objectifs supplémentaires :
-- Eliminer les k-mers multi-match (définir ce qu'on en fait)
+Objectif :
+1. Charger la séquence et trouver comment la prendre par k-mer ;
+2. Rechercher chaque k-mer dans l'index des k-mer snp ;
+3. Compter les kmers identifiés ;
+4. Analyser les k-mers identifiés.
 """
 
 import ahocorasick
