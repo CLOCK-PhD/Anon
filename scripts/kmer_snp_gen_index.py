@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 """
-Extraire des k-mers de taille voulue (k=21 par défaut) depuis la séquence de référence du chromosome directement, 
+Extraire des k-mers de taille voulue (k=21 par défaut) depuis la séquence de référence du chromosome, 
 à partir des infos vcf du fichier ref snp
 
 Génère des fichiers .tsv contenant 100000 kmers (valeur par défaut) triés par ordre lexicographique
@@ -11,38 +11,13 @@ Kmer_seq   rs_id   chromosome  snp_position    kmer_position
 A cause du nombre de fichiers qui peuvent être produits, tous les 1000 fichiers .tsv,
 un merge est réalisé pour les trier dans un nouveau fichier.
 
-Tous les fichiers sont ensuite à nouveau triés et réunis dans un fichier final_merge.tsv
+Tous les fichiers sont ensuite à nouveau triés et soit :
+    - organisés en index préfixe/suffixe (défaut)
+    - réunis dans un fichier final_merge.tsv (option)
 """
 
 """
-# MODIFICATIONS A APPORTER :
-# Intégrer un index de k-mer en préfixe/suffixe.
-# On va commencer les tests avec un préfixe de longueur 5 (soit 1024 fichiers outputs) sur le chrY
-
-Idée : Une fois les merges partiels réalisés, on va réaliser l'index préfixe au lieu de produire le fichier unique
-qui est normalement crée.
-
-Problème à régler : dans le cas où on n'a qu'un seul fichier à la fin (par exemple si on a un nombre de fichiers
-kmers moins grand que le la limite du merge, comme c'est le cas du chrY)
-Dans ce cas, on devrait générer à partir des fichiers qui restent sans faire de merge.
-Dans les autres cas, on fait le merge sur les derniers fichiers qui restent, puis on génère l'index à partir des fichiers
-de merge.
-
-Autre problème à gérer : l'écriture dans les fichiers. On ne pourra pas les ouvrir tous en même temps,
-donc il faut pouvoir ajouter les k-mers les uns après les autres.
-
-Idée : On peut générer les fichiers en amont avec des fonctions de recombinaisons qui vont faire une liste contenant
-tous les noms possibles des suffixes, puis ajouter les kmers dans ces fichiers si leur préfixe correspond.
-Une fois le merge final réalisé, on va chercher les fichiers vides et les supprimer.
-
-APPROCHE :
-- Générer les merges
-- Générer les fichiers préfixes
-- Remplir les fichiers avec les fichiers merge
-
-# A FAIRE : Lister les k-mers en double et leur nombre
-# ? A FAIRE : Créer un fichier contenant tous les rs_id des kmers supprimés
-# ? A FAIRE : logs pour les kmers rejetés
+# ? A FAIRE : Lister les k-mers en double et leur nombre
 # ? A FAIRE : lire tous les chromosomes pour lancer le programme en une fois
 
     - Détecter les chromosomes différents
@@ -335,9 +310,9 @@ def merge_kmers(output_dir:str, merged_file_number, kmer_files:list)-> str:
 
     return output_merged_file_name
 
-# Générer les préfixes
+# Générer les préfixes - Pas utile
 def genPrefixes(length:int) -> list:
-    """Génère une liste qui contient tous les préfixes possibles pour une longueur de préfixe donnée.
+    """Génère une liste qui contient tous les préfixes possibles d'une longueur donnée.
 
     Parameters:
         length (int):   Longueur du préfixe
@@ -350,6 +325,30 @@ def genPrefixes(length:int) -> list:
         prefix_list.append("".join(pref))
     return prefix_list
 
+def createIndex(output_dir:str, kmer_files:list, prefix_size:int):
+    files = [open(filename, "r") for filename in kmer_files]
+    merged = heapq.merge(*files)
+    prev_line = ""
+    print("\tCreating Index...")
+    for line in merged:
+        kmer = line.split("\t")[0]
+        prefix = kmer[:prefix_size]
+        suffix = kmer[prefix_size:]
+        if kmer == prev_line :
+            prev_line = kmer
+        else:
+            new_line = suffix + "\t" + "\t".join(line.split("\t")[1:])
+            with open(f"{output_dir}/{prefix}", "a", encoding="utf-8") as f:
+                f.write(new_line)
+            prev_line = kmer
+    print("le chat")
+
+    # Suppression des fichiers
+    print("\t\tDeleting kmer files...")
+    for kmer_file_name in kmer_files :
+        os.remove(f"{kmer_file_name}")
+    print("\t\tk-mer files deleted")
+
 def main() :
     # Gestion des arguments
     parser = argparse.ArgumentParser()
@@ -358,19 +357,21 @@ def main() :
     parser = argparse.ArgumentParser(description='Extract kmers at SNP positions from a reference VCF and fasta file')
     parser.add_argument("-i", "--input", dest="fasta_file", help="fasta input file")
     parser.add_argument("-r", "--reference", dest="ref", help="VCF SNP reference file")
-    parser.add_argument("-k", "--kmer_size", dest="kmer_size", default=21, help="Select k-mer size")
-    parser.add_argument("-n", dest="kmers_per_output_file", default=100000, help="Number of kmers per output file for the heap merge")
+    parser.add_argument("-k", "--kmer_size", dest="kmer_size", default=21, type=int, help="Select k-mer size")
+    parser.add_argument("-n", dest="kmers_per_output_file", default=100000, type=int, help="Number of kmers per output file for the heap merge")
     parser.add_argument("-o", "--ouput", dest="output_dir", default="generated_kmers", help="Output folder name")
     parser.add_argument("-b", "--batch_size", dest="batch_size", default=1000, type=int, help="Limit of k-mer files to merge during execution")
+    parser.add_argument('--no_index', dest="index" ,action='store_false', help="Create a simple output file in lexicographic order instead of a prefix index")
 
     # Récupération des valeurs des arguments et attribution
     args = parser.parse_args()
     input_file = args.fasta_file
-    kmer_size = int(args.kmer_size)
-    kmers_per_file = int(args.kmers_per_output_file)
+    kmer_size = args.kmer_size
+    kmers_per_file = args.kmers_per_output_file
     output_dir = args.output_dir
     ref = args.ref
     batch_size = args.batch_size
+    make_index = args.index
 
     # Créer le dossier de sortie
     os.makedirs(output_dir)
@@ -382,6 +383,9 @@ def main() :
     output_file_list = []   # Liste des fichiers de kmers à merge
     merged_file_number = 0  # Numéro du fichier mergé
     merged_file_list_for_final_merge = []
+    # Variables pour la génération de l'index des préfixes
+    prefix_size = 5     # A modifier plus tard par une fonction qui trouvera la taille idéale du préfixe.
+    #prefix_list = genPrefixes(prefix_size)
 
     # Récupérer la séquence du chromosome en mémoire
     seq = []
@@ -484,11 +488,13 @@ def main() :
         # Ajout du dernier fichier à la liste du merge final
         merged_file_list_for_final_merge.append(output_file_name)
 
-    # Merge des derniers fichiers
-    print("Final merge...")
-    merge_kmers(output_dir, "final", merged_file_list_for_final_merge)
-
-    print("All k-mers merged")
+    # Créer un index préfixe ou un fichier de merge final
+    if make_index:
+        createIndex(output_dir, merged_file_list_for_final_merge, prefix_size)
+    else :
+        print("Final merge...")
+        merge_kmers(output_dir, "final", merged_file_list_for_final_merge)
+        print("All k-mers merged")
 
 if __name__ == '__main__':
     main()
