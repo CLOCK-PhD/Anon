@@ -1,10 +1,15 @@
 #!/usr/bin/python3
 
+"""
+Un script qui sert à tester des trucs, malgré son nom de départ.
+"""
+
 import os
 from itertools import product
 from pprint import pprint
 from sys import prefix
 import argparse
+import re
 
 def genPrefixes(length:int) -> list:
     pref_list = []
@@ -55,5 +60,21 @@ if __name__ == "__main__":
     for e in prefix_list:
         open(f"{output_dir}/{e}", "a").close()"""
 
+    chr1 = "NC_000001.10"
+    chrY = "NC_000024.9"
+    chrX = "NC_000023.10"
+    chr14 = "NC_000014.8"
+    chr7 = "NC_000007.11"
+
+    chr_list = [chr1, chr7, chr14, chrX, chrY]
+
+    for chr in chr_list :
+        res = re.search("NC_0*(.*)\.", chr)
+        if res:
+            chr = res.group(1)
+        else:
+            print("t'es mauvais")
+
+    pprint(chr_list)
 
     

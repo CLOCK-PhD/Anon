@@ -17,8 +17,7 @@ Tous les fichiers sont ensuite à nouveau triés et soit :
 """
 
 """
-# ? A FAIRE : Lister les k-mers en double et leur nombre
-# ? A FAIRE : lire tous les chromosomes pour lancer le programme en une fois
+? A FAIRE : lire tous les chromosomes pour lancer le programme en une fois
 
     - Détecter les chromosomes différents
     - Créer un dossier séparé pour chaque chromosome
@@ -27,8 +26,8 @@ Tous les fichiers sont ensuite à nouveau triés et soit :
     - Paralléliser les exécutions pour faire plusieurs chromosomes en même temps
     - Implique de parcourir le fichier vcf une première fois pour lister tous les chromosomes différents
 
-# ? A FAIRE : paralléliser le merge pendant la génération de kmer
-# IDÉE : Barre de progression
+? A FAIRE : paralléliser le merge pendant la génération de kmer
+IDÉE : Barre de progression
 """
 
 import re
@@ -61,6 +60,13 @@ def get_vcf_line_info(line)-> tuple:
     """
     description = line.split("\t")
     chrom = description[0]
+    chrom_res = re.search("NC_0*(.*)\.", chrom)
+    if chrom_res:
+        chrom = chrom_res.group(1)
+        if chrom == "24":
+            chrom = "Y"
+        if chrom == "23":
+            chrom = "X"
     snp_pos = description[1]
     rs_id = description[2]
     snp_ref = description[3]

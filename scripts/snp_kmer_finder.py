@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 """
-snp_kmer_finder : un programme pour rechercher les kmers des snp présents dans une séquence.
+snp_kmer_finder : rechercher les kmers des snp présents dans une séquence à partir d'un index.
 
 EN COURS DE DEV
 
@@ -13,6 +13,7 @@ Objectif :
 5. Faire un fichier output de comptage de k-mers
 
 A FAIRE : Intégrer une rechercher dichotomique (binary search) pour la recherche de suffixe
+A FAIRE : Retirer les conditions de test
 
 IDEE : Actualiser l'indexe :
     1. Faire une recherche de k-mers sur la séquence de référence pour supprimer les kmers qui
