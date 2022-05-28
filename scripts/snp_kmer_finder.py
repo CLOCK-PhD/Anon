@@ -16,27 +16,39 @@ Fournit en sortie :
 
 Le fichier de sortie .tsv est sous la forme :
 kmer_seq    rs_id   comptage
-
-EN COURS DE DEV
-
-A FAIRE : Intégrer une rechercher dichotomique (binary search) pour la recherche de suffixe
-    Testé, pas approuvé. À approfondir.
-
-IDEE : Actualiser l'indexe
-    1. Faire une recherche de k-mers sur la séquence de référence pour supprimer les kmers qui
-    apparaissent plusieurs fois.
-    2. Réutiliser le programme avec la séquence d'une autre personne.
-    
-    Trois possibilités :
-        - Laisser en tant que programme stand alone
-        - Intégrer dans un kmer_snp_gen_index
-        - Faire un autre programme pour actualiser l'index
 """
+
+"""
+AMELIORATION : Algo de recherche plus efficace que la simple recherche par ligne actuelle
+    -Intégrer une rechercher dichotomique (binary search) pour la recherche de suffixe
+        Testé, pas approuvé. À approfondir.
+"""
+
 import argparse
+import os
 from tqdm import tqdm
 from Bio import SeqIO
 from typing import OrderedDict
 from pprint import pprint
+
+def uniquify(path:str) -> str:
+    """
+    Génère un nom de dossier unique pour FileExistsError
+
+    Parameters :
+        path (str): Nom du chemin du dossier à créer
+
+    Returns :
+        path(str):  Nouveau nom du chemin du dossier
+    """
+    filename, extension = os.path.splitext(path)
+    counter = 1
+
+    while os.path.exists(path):
+        path = filename + "_" + str(counter) + extension
+        counter += 1
+
+    return path
 
 def main():
 
@@ -58,6 +70,8 @@ def main():
     ksize = args.kmer_size
     prefix_size = args.prefix_size
     output_unknown_prefix = args.no_pref
+    output_file_name = "kmer_finder_results.tsv"
+    uniquify(output_file_name)
 
     found_kmer_dict = {}
     not_in_index = []
@@ -96,7 +110,7 @@ def main():
     found_kmer_dict = OrderedDict(sorted(found_kmer_dict.items()))
 
     # Afficher le k-mer et le nombre de fois qu'il apparait dans la séquence
-    with open(f"{index_dir}/07_kmer_finder_results.tsv", "w") as f:
+    with open(f"{index_dir}/{output_file_name}", "w") as f:
         for key, value in found_kmer_dict.items() :
             f.write(f"{key[0]}\t{key[1]}\t{len(value)}\n")
 
