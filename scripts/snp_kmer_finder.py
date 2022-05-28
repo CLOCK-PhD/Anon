@@ -3,6 +3,20 @@
 """
 snp_kmer_finder : rechercher les kmers des snp présents dans une séquence à partir d'un index.
 
+Prend en entrée :
+    une séquence au format fasta 
+    l'index de k-mer fournit par le programme kmer_snp_gen_index.py
+
+Fournit en sortie :
+    - un fichier .tsv trié contenant:
+        - les k-mers
+        - le rs_id de leur snp
+        - le nombre de fois qu'ils ont été trouvés
+    - Optionnel : un fichier contenant les préfixes qui ne sont pas dans l'indexe
+
+Le fichier de sortie .tsv est sous la forme :
+kmer_seq    rs_id   comptage
+
 EN COURS DE DEV
 
 A FAIRE : Intégrer une rechercher dichotomique (binary search) pour la recherche de suffixe
@@ -18,23 +32,43 @@ IDEE : Actualiser l'indexe
         - Intégrer dans un kmer_snp_gen_index
         - Faire un autre programme pour actualiser l'index
 """
-
+import argparse
 from tqdm import tqdm
 from Bio import SeqIO
 from typing import OrderedDict
 from pprint import pprint
 
 def main():
+
+    # Gestion des arguments
+    parser = argparse.ArgumentParser()
+
+    # Création des arguments
+    parser = argparse.ArgumentParser(description='Extract kmers at SNP positions from a reference VCF and fasta file')
+    parser.add_argument("-i", "--index", dest="index", help="Path to the directory containing the index")
+    parser.add_argument("-f", "--fasta", dest="seq", help="Path to the sequence fasta file")
+    parser.add_argument("-k", "--kmer_size", dest="kmer_size", default=21, type=int, help="Select k-mer size")
+    parser.add_argument("-p", "--prefix_size", dest="prefix_size", default=5, type=int, help="Prefix size")
+    parser.add_argument('--show-prefix', dest="no_pref" ,action='store_true', help="Add this option to create a simple output file in lexicographic order instead of a prefix index")
+
+    # Récupération des valeurs des arguments et attribution
+    args = parser.parse_args()
+    index_dir = args.index
+    seq_file = args.seq
+    ksize = args.kmer_size
+    prefix_size = args.prefix_size
+    output_unknown_prefix = args.no_pref
+
     # Variables
-    ksize = 21
-    prefix_size = 5
-    index_dir = "../data/snp_chr_name_test"
+    #ksize = 21
+    #prefix_size = 5
+    #index_dir = "../data/snp_chr_name_test"
     found_kmer_dict = {}
     not_in_index = []
 
     # Charger la séquence
     print("Loading sequence")
-    seq_file = "../data/grch37p13/NC_000024.9_Homo_sapiens_chromosome_Y.fasta"
+    #seq_file = "../data/grch37p13/NC_000024.9_Homo_sapiens_chromosome_Y.fasta"
     with open(seq_file) as handle :
         for record in SeqIO.parse(handle, "fasta"):
             seq = str(record.seq).upper()
@@ -71,11 +105,12 @@ def main():
     found_kmer_dict = OrderedDict(sorted(found_kmer_dict.items()))
 
     # Afficher le k-mer et le nombre de fois qu'il apparait dans la séquence
-    with open(f"{index_dir}/04kmer_finder_results.tsv", "w") as f:
+    with open(f"{index_dir}/05_kmer_finder_results.tsv", "w") as f:
         for key, value in found_kmer_dict.items() :
             f.write(f"{key[0]}\t{key[1]}\t{len(value)}\n")
 
-    
+    if output_unknown_prefix:
+        pprint(not_in_index)
 
 if __name__ == "__main__":
     main()
