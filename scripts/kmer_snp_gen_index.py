@@ -17,8 +17,15 @@ Tous les fichiers sont ensuite à nouveau triés et soit :
 """
 
 """
-? A FAIRE : lire tous les chromosomes pour lancer le programme en une fois
+EN COURS : BARRES DE PROGRESSION
+    - Merge normal                      OK
+    - Merge final / Creation Index      Non
+    - Génération du batch kmer          Non
+    - Génération du batch kmer final    Non
 
+A FAIRE : Fonction pour la taille idéale du préfixe
+
+? A FAIRE : lire tous les chromosomes pour lancer le programme en une fois
     - Détecter les chromosomes différents
     - Créer un dossier séparé pour chaque chromosome
     - Exécuter le programme pour chaque
@@ -27,19 +34,15 @@ Tous les fichiers sont ensuite à nouveau triés et soit :
     - Implique de parcourir le fichier vcf une première fois pour lister tous les chromosomes différents
 
 ? A FAIRE : paralléliser le merge pendant la génération de kmer
-IDÉE : Barre de progression
 """
 
 import re
-import sys
 import argparse
 import os
 import heapq
 from Bio import SeqIO
 from typing import OrderedDict
-from pprint import pprint
-from os.path import isfile, join
-from itertools import product
+from tqdm import tqdm
 
 # Récupérer les informations contenues dans le VCF
 def get_vcf_line_info(line)-> tuple:
@@ -74,7 +77,6 @@ def get_vcf_line_info(line)-> tuple:
     #qual = description[5]
     #filter = description[6]
     info = description[7]
-    #vc = "pas détecté"
     res = re.search("VC=(\w*)", info)
     if res:
         vc = res.group(1)
@@ -298,15 +300,18 @@ def merge_kmers(output_dir:str, merged_file_number, kmer_files:list)-> str:
     merged = heapq.merge(*files)
     prev_line = ""
     print("\tMerging files...")
+    pbar = tqdm(total=len(kmer_files)*100000)
     with open(output_merged_file_name, "w", encoding="utf-8") as f:
         for line in merged:
+            pbar.update(1)
             kmer = line.split("\t")[0]
             if kmer == prev_line :
                 prev_line = kmer
             else:
                 f.write(line)
                 prev_line = kmer
-    print("\tMerging done")
+    #print("\tMerging done")
+    pbar.close()
     
     # Suppression des fichiers
     print("\t\tDeleting kmer files...")
@@ -316,22 +321,16 @@ def merge_kmers(output_dir:str, merged_file_number, kmer_files:list)-> str:
 
     return output_merged_file_name
 
-# Générer les préfixes - Pas utile
-def genPrefixes(length:int) -> list:
-    """Génère une liste qui contient tous les préfixes possibles d'une longueur donnée.
+# Créer l'index
+def createIndex(output_dir:str, kmer_files:list, prefix_size:int):
+    """Créer l'index des préfixes dont chaque fichier est un préfixe contenant les k-mers qui commencent par ce préfixe.
 
     Parameters:
-        length (int):   Longueur du préfixe
-
-    Returns:
-        prefix_list (list): Liste des préfixes
+        output_dir (str):       Nom du dossier de sortie
+        kmer_files (list(str)): Liste contenant les noms des fichiers de k-mers
+        prefixe_size (int):     Taille du préfixe
+    
     """
-    prefix_list = []
-    for pref in list(product("ACGT", repeat=length)):
-        prefix_list.append("".join(pref))
-    return prefix_list
-
-def createIndex(output_dir:str, kmer_files:list, prefix_size:int):
     files = [open(filename, "r") for filename in kmer_files]
     merged = heapq.merge(*files)
     prev_line = ""
@@ -355,6 +354,26 @@ def createIndex(output_dir:str, kmer_files:list, prefix_size:int):
         os.remove(f"{kmer_file_name}")
     print("\t\tk-mer files deleted")
 
+# Générer un nom de dossier unique
+def uniquify(path:str) -> str:
+    """
+    Génère un nom de dossier unique pour FileExistsError
+
+    Parameters :
+        path (str): Nom du chemin du dossier à créer
+
+    Returns :
+        path(str):  Nouveau nom du chemin du dossier
+    """
+    filename, extension = os.path.splitext(path)
+    counter = 1
+
+    while os.path.exists(path):
+        path = filename + "(" + str(counter) + ")" + extension
+        counter += 1
+
+    return path
+
 def main() :
     # Gestion des arguments
     parser = argparse.ArgumentParser()
@@ -367,7 +386,7 @@ def main() :
     parser.add_argument("-n", dest="kmers_per_output_file", default=100000, type=int, help="Number of kmers per output file for the heap merge")
     parser.add_argument("-o", "--ouput", dest="output_dir", default="generated_kmers", help="Output folder name")
     parser.add_argument("-b", "--batch_size", dest="batch_size", default=1000, type=int, help="Limit of k-mer files to merge during execution")
-    parser.add_argument('--no_index', dest="index" ,action='store_false', help="Create a simple output file in lexicographic order instead of a prefix index")
+    parser.add_argument('--no-index', dest="index" ,action='store_false', help="Add this option to create a simple output file in lexicographic order instead of a prefix index")
 
     # Récupération des valeurs des arguments et attribution
     args = parser.parse_args()
@@ -379,19 +398,20 @@ def main() :
     batch_size = args.batch_size
     make_index = args.index
 
-    # Créer le dossier de sortie
-    os.makedirs(output_dir)
-    # Dictionnaire contenant les kmers
-    kmers = {}
-    # Numéro du fichier de sortie
-    file_number = 0
-    # Variables pour le merge
-    output_file_list = []   # Liste des fichiers de kmers à merge
-    merged_file_number = 0  # Numéro du fichier mergé
-    merged_file_list_for_final_merge = []
-    # Variables pour la génération de l'index des préfixes
-    prefix_size = 5     # A modifier plus tard par une fonction qui trouvera la taille idéale du préfixe.
-    #prefix_list = genPrefixes(prefix_size)
+    # Création du dossier de sortie
+    try :
+        os.makedirs(output_dir)
+    except FileExistsError:
+        output_dir = uniquify(output_dir)
+        os.makedirs(output_dir)
+
+    # Création des variables
+    kmers = {}                              # Dictionnaire contenant les kmers
+    file_number = 0                         # Numéro du fichier de sortie
+    output_file_list = []                   # Liste des fichiers de kmers à merge
+    merged_file_number = 0                  # Numéro du fichier mergé
+    merged_file_list_for_final_merge = []   # Liste des fichiers pour le merge final
+    prefix_size = 5                         # A modifier plus tard par une fonction qui trouvera la taille idéale du préfixe.
 
     # Récupérer la séquence du chromosome en mémoire
     seq = []
@@ -407,17 +427,15 @@ def main() :
             # Merge et suppression des fichiers
             if len(output_file_list) == batch_size :
                 print(f"\tMerging k-mers batch {merged_file_number}")
-                # Merge les fichiers de output_file_list
                 merged_file_list_for_final_merge.append(merge_kmers(output_dir, merged_file_number, output_file_list))
-                # Incrémentation du nom du fichier des kmers mergés
-                merged_file_number += 1
-                # Réinitialisation de la liste des fichiers à merge
-                output_file_list = []
+                merged_file_number += 1 # Incrémentation du nom du fichier des kmers mergés
+                output_file_list = []   # Réinitialisation de la liste des fichiers à merge
                 print(f"Generating k-mer files : batch {merged_file_number}")
 
+            # Récupération des informations
             chrom, snp_ref, snp_pos, rs_id, snp_alt, vc = get_vcf_line_info(line)
                 
-            # Générer les kmers depuis les kmers_max
+            # Génération des kmers à partir des kmers_max
             kmer_max_list = get_kmer_from_pos(seq, snp_pos, vc, kmer_size, snp_ref, snp_alt)
             for kmer_max in kmer_max_list:
                 kmer_list = kmer_generator(kmer_size, kmer_max)
@@ -433,68 +451,21 @@ def main() :
                         for kmer, values in kmers.items() :
                             line_output = f"{kmer}\t{values[0]}\t{values[1]}\t{values[2]}\t{values[3]}\n"
                             f.write(line_output)
-                    # Réinitialisation du dictionnaire des kmers
-                    kmers={}
-                    # Ajout du nom de fichier dans la liste des fichiers à merge
-                    output_file_list.append(output_file_name)
+                    kmers={} # Réinitialisation du dictionnaire des kmers
+                    output_file_list.append(output_file_name) # Ajout du nom de fichier dans la liste des fichiers à merge
                     file_number += 1
-
-    # Boucle pour les tests
-    """with open(ref, "r") as vcf:
-        for line in vcf:
-            # Boucle pour les tests :
-            # ChY : 2375594
-            
-            # Merge et suppression des fichiers
-            if len(output_file_list) == 10 :
-                # Merge les fichiers de output_file_list
-                merged_file_list_for_final_merge.append(merge_kmers(output_dir, merged_file_number, output_file_list))
-                # Incrémentation du nom du fichier des kmers mergés
-                merged_file_number += 1
-                # Réinitialisation de la liste des fichiers à merge
-                output_file_list = []
-            if count <= 100000:
-                chrom, snp_ref, snp_pos, rs_id, snp_alt, vc = get_vcf_line_info(line)
-                
-                # Test pour générer les kmers depuis les kmers_max
-                kmer_max_list = get_kmer_from_pos(seq, snp_pos, vc, kmer_size, snp_ref, snp_alt)
-                for kmer_max in kmer_max_list:
-                    kmer_list = kmer_generator(kmer_size, kmer_max)
-
-                # Place les kmers générés dans le dictionnaire :
-                # Output = tsv : Séquence k-mer, ID, chromosome, position du SNP, position DU KMER
-                for kmer in kmer_list :
-                    if len(kmers) < kmers_per_file :
-                        kmers[kmer] = (rs_id, chrom, snp_pos)
-                    if len(kmers) == kmers_per_file :
-                        output_file_name = f"{output_dir}/{str(file_number)}_snp_k{kmer_size}.tsv"
-                        kmers = OrderedDict(sorted(kmers.items()))
-                        with open(output_file_name, "w", encoding="utf-8") as f:
-                            for kmer, values in kmers.items() :
-                                line_output = f"{kmer[0]}\t{values[0]}\t{values[1]}\t{values[2]}\t{kmer[1]}\n"
-                                f.write(line_output)
-                        # Réinitialisation du dictionnaire des kmers
-                        kmers={}
-                        # Ajout du nom de fichier dans la liste des fichiers à merge
-                        output_file_list.append(output_file_name)
-                        file_number += 1
-                count += 1
-            else:
-                break"""
     
-    # Ajouter les derniers fichiers de kmers dans la liste du merge final
-    merged_file_list_for_final_merge += output_file_list
+    merged_file_list_for_final_merge += output_file_list # Ajouter les derniers fichiers de kmers dans la liste du merge final
     # Exporter les derniers kmers dans un fichier
     output_file_name = f"{output_dir}/{str(file_number)}_snp_k{kmer_size}.tsv"
     kmers = OrderedDict(sorted(kmers.items()))
     with open(output_file_name, "w", encoding="utf-8") as f:
         for kmer, values in kmers.items() :
             line_output = f"{kmer}\t{values[0]}\t{values[1]}\t{values[2]}\t{values[3]}\n"
-            f.write(line_output)
-        # Ajout du dernier fichier à la liste du merge final
-        merged_file_list_for_final_merge.append(output_file_name)
+            f.write(line_output)        
+        merged_file_list_for_final_merge.append(output_file_name) # Ajout du dernier fichier à la liste du merge final
 
-    # Créer un index préfixe ou un fichier de merge final
+    # Créer un index des préfixes ou un fichier de merge final
     if make_index:
         createIndex(output_dir, merged_file_list_for_final_merge, prefix_size)
     else :
