@@ -19,9 +19,9 @@ Tous les fichiers sont ensuite à nouveau triés et soit :
 """
 EN COURS : BARRES DE PROGRESSION
     - Merge normal                      OK
-    - Merge final / Creation Index      Non
-    - Génération du batch kmer          Non
-    - Génération du batch kmer final    Non
+    - Merge final / Creation Index      Non - chiant
+    - Génération du batch kmer          Non - chiant
+    - Génération du batch kmer final    Non - chiant
 
 A FAIRE : Fonction pour la taille idéale du préfixe
 
@@ -369,7 +369,7 @@ def uniquify(path:str) -> str:
     counter = 1
 
     while os.path.exists(path):
-        path = filename + "(" + str(counter) + ")" + extension
+        path = filename + "_" + str(counter) + extension
         counter += 1
 
     return path
