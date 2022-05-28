@@ -5,27 +5,24 @@ snp_kmer_finder : rechercher les kmers des snp présents dans une séquence à p
 
 EN COURS DE DEV
 
-Objectif :
-1. Ouvrir la séquence de référence
-2. La parcourir pour trouver chaque k-mer
-3. Pour chaque k-mer, rechercher s'il est présent dans l'index
-4. Relever les k-mers présents et les compter. (vérifier la position dans la séquence)
-5. Faire un fichier output de comptage de k-mers
-
 A FAIRE : Intégrer une rechercher dichotomique (binary search) pour la recherche de suffixe
-A FAIRE : Retirer les conditions de test
+    Testé, pas approuvé. À approfondir.
 
-IDEE : Actualiser l'indexe :
+IDEE : Actualiser l'indexe
     1. Faire une recherche de k-mers sur la séquence de référence pour supprimer les kmers qui
     apparaissent plusieurs fois.
     2. Réutiliser le programme avec la séquence d'une autre personne.
+    
+    Trois possibilités :
+        - Laisser en tant que programme stand alone
+        - Intégrer dans un kmer_snp_gen_index
+        - Faire un autre programme pour actualiser l'index
 """
 
 from tqdm import tqdm
 from Bio import SeqIO
 from typing import OrderedDict
 from pprint import pprint
-from os.path import isfile, join
 
 def main():
     # Variables
@@ -41,49 +38,44 @@ def main():
     with open(seq_file) as handle :
         for record in SeqIO.parse(handle, "fasta"):
             seq = str(record.seq).upper()
+    print(f"Sequence length : {len(seq)}")
     
-    print("Analysing sequence k-mers...")
     # Parcourir les kmers de la séquence
     n_kmers = len(seq) - ksize + 1
-    count = 0
-    pbar = tqdm(total=100000)
+    print(f"Number of k-mers to analyse : {n_kmers}")
+    print("Searching sequence k-mers in the index...")
+    pbar = tqdm(total=n_kmers)
     for i in range(n_kmers):
         pbar.update(1)
-        count += 1
         kmer = str(seq[i:i+ksize])
         prefix = kmer[:prefix_size]
         suffix = kmer[prefix_size:]
         try :
             with open(f"{index_dir}/{prefix}", "r")as f:
-                for line in f: # On changera ça pour une recherche dichotomique après
+                for line in f:
+                    # Pas de répétition => break une fois le k-mer trouvé dans l'indexe
                     if suffix == line.split("\t")[0] :
-                        # Key = k-mer, Value = [rs_id]
-                        """try:
-                            found_kmer_dict[prefix+line.split("\t")[0]].append(line.split("\t")[1])
-                        except KeyError:
-                            found_kmer_dict[prefix+line.split("\t")[0]] = [line.split("\t")[1]]"""
-                        # Key = (k-mer, rs_id), Value = comptage
-                        """try:
-                            found_kmer_dict[(prefix+line.split("\t")[0], line.split("\t")[1])] += 1
-                        except KeyError:
-                            found_kmer_dict[(prefix+line.split("\t")[0], line.split("\t")[1])] = 1"""
-                        # Key = (k-mer, rs_id), Value = [positions]
                         try:
                             found_kmer_dict[(prefix+line.split("\t")[0], line.split("\t")[1])].append(i)
+                            break
                         except KeyError:
                             found_kmer_dict[(prefix+line.split("\t")[0], line.split("\t")[1])] = [i]
+                            break
+                    break
         except FileNotFoundError:
             not_in_index.append(prefix)
-        if count == 100000:
-            break
 
     pbar.close()
+    
+    # Tri du dictionnaire
+    found_kmer_dict = OrderedDict(sorted(found_kmer_dict.items()))
 
-    pprint(not_in_index)
     # Afficher le k-mer et le nombre de fois qu'il apparait dans la séquence
-    """for key, value in found_kmer_dict.items() :
-        print(f"{key} : {value}")"""
+    with open(f"{index_dir}/04kmer_finder_results.tsv", "w") as f:
+        for key, value in found_kmer_dict.items() :
+            f.write(f"{key[0]}\t{key[1]}\t{len(value)}\n")
 
+    
 
 if __name__ == "__main__":
     main()
