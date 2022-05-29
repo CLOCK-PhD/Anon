@@ -8,8 +8,6 @@ grâce au programme snp_kmer_finder.py.
 
 Produit un nouvel index qui ne contient plus les k-mers contenus dans l'output de snp_kmer_finder.py.
 
-EN DEVELOPPEMENT
-
 Objectif :
     1. Créer un dossier pour le nouvel index (OK)
     2. Lire le fichier output kmer_snp_finder.py (OK)
