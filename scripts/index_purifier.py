@@ -70,10 +70,8 @@ def main():
 
 
     # 2. Ouverture du fichier kmer_found
-    count = 0
     with open(kmer_to_del_file, "r") as f:
         for line in f:
-            count += 1
             kmer = line.split("\t")[0]
             prefix = kmer[:prefix_size]
             suffix = kmer[prefix_size:]
@@ -83,9 +81,6 @@ def main():
                 kmer_dict[prefix].append(suffix)
             except KeyError:
                 kmer_dict[prefix] = [suffix]
-
-            if count == 2000:
-                break
     
     # Tri du dico (pour être sûr)
     kmer_dict = OrderedDict(sorted(kmer_dict.items()))
