@@ -23,6 +23,7 @@ EN COURS : BARRES DE PROGRESSION
     - Génération du batch kmer          Non - chiant
     - Génération du batch kmer final    Non - chiant
 
+A FAIRE : Créer l'index dans un dossier spécifique
 A FAIRE : Fonction pour la taille idéale du préfixe
 
 ? A FAIRE : lire tous les chromosomes pour lancer le programme en une fois
