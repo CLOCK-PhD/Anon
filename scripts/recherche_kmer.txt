@@ -1,0 +1,191 @@
+Pour la gestion des fichiers, il faut avoir à l'esprit que toutes les opérations de lecture/écriture sont lentes (moins vrai avec des SSD que des HD magnétiques, mais cela reste vrai globalement).
+
+
+Il n'est pas envisageable de faire :
+
+
+Pour chaque k-mer km Faire
+  var pref := km[1 .. k1]
+  var suff := km[k1+1 .. k]
+  var f_desc := ouvrir_fichier("directory/"+pref+".extension")
+  infos := rechercher(suff, f_desc)
+  fermer_fichier(f_desc)
+
+
+Le plus efficace dans un monde idéal serait de tous les ouvrir en même temps:
+
+
+var f_desc : tableau de 4^k1 descripteurs de fichiers
+
+Pour tous les préfixes pref de taille k1 Faire
+
+  id_pref := encode(pref) # exemple, si k1 = 3 : AAA => 0, AAC => 1, AAG => 2, AAT => 3, ACA => 4... TTT => 63 (= 4^k1 - 1)
+
+  f_desc[id_pref] := ouvrir_fichier("directory/"+pref+".extension")
+
+
+Pour chaque k-mer km Faire
+  pref := km[1 .. k1]
+
+  id_pref := encode(pref)
+  suff := km[k1+1 .. k]
+
+  infos := rechercher(suff, f_desc[id_pref])
+
+
+Pour tous les préfixes pref de taille k1 Faire
+
+  id_pref := encode(pref)
+  fermer_fichier(f_desc[id_pref])
+
+
+
+Si tu as beaucoup de fichiers, il n'est pas raisonnable non plus de tous les ouvrir, donc il faut gérer les ouvertures/fermetures avec finesse
+
+
+Le bon compromis est d'avoir un pool de fichier ouverts (il faut accéder rapidement au fichiers et en cas de saturation fermer les moins utilisés, donc il faut être sioux...)
+
+Par exemple en utilisant un arbre AVL et une liste
+
+Chaque nœud de l'AVL est un triplet (id_pref, descripteur_fichier, élément de liste), la valeur id_pref servant de clé, donc avl[id] <=> (desc, elem)
+
+Chaque élément de la liste est un des id_pref stocké dans l'AVL.
+
+
+
+fonction supprime_dernier(liste l, arbre avl):
+
+  si l n'est pas vide:
+
+    var f_desc, elem
+    elem := dernier(l)
+
+    enlever elem de la liste l
+
+    (f_desc, _) := avl[valeur(elem)]
+
+    fermer_fichier(f_desc)
+
+    supprimer(avl[valeur(elem)])
+
+
+fonction recherche_kmer(kmer km, entier k1, entier k, liste l, arbre avl):
+  var pref := km[1 .. k1]
+
+  var suff := km[k1+1 .. k]
+
+  id_pref := encode(pref)
+
+  var f_desc, elem
+
+  si id_pref est dans avl:
+
+    (f_desc, elem) := avl[id_pref]
+
+    enlever elem de la liste l
+  sinon
+
+    si memoire insuffisante ou nombre de fichiers ouverts trop important:
+
+       supprimer_dernier(l, avl)
+    f_desc := ouvrir_fichier("directory/"+pref+".extension")
+
+  ajouter id_pref en tête de la liste
+
+  avl[id_pref] := (f_desc, tete(l))
+
+  infos := rechercher(suff, f_desc)
+
+
+var avl: arbre AVL qui associe à un entier un couple (descripteur de fichier, élément de liste)
+
+var l : liste d'entiers
+
+Pour chaque k-mer km Faire
+
+  recherche_kmer(km, k1, k, l, avl)
+
+
+Tant que l n'est pas vide:
+
+  supprimer_dernier(l, avl)
+
+
+assert(avl est vide)
+
+
+
+Ça, c'est dans l'hypothèse où tu cherches directement dans le fichier. Bien évidemment, le mieux est de charger l'intégralité du fichier en mémoire (dans un tableau) pour pouvoir faire la recherche.
+
+Dans ce cas, il faut modifier l'algo précédent de sorte à non plus maintenir un ensemble de descripteur de fichiers, mais directement un ensemble de tableaux associés à un identifiant de préfixe (avl est donc maintenant un couple tableau de suffixes, élément de liste) :
+
+
+
+fonction supprime_dernier(liste l, arbre avl):
+
+  si l n'est pas vide:
+
+    var f_desc, elem
+    elem := dernier(l)
+
+    enlever elem de la liste l
+
+    (tab, _) := avl[valeur(elem)]
+
+    supprimer tableau tab
+
+    supprimer(avl[valeur(elem)])
+
+
+fonction recherche_kmer(kmer km, entier k1, entier k, liste l, arbre avl):
+  var pref := km[1 .. k1]
+
+  var suff := km[k1+1 .. k]
+
+  id_pref := encode(pref)
+
+  var tab, elem
+
+  si id_pref est dans avl:
+
+    (tab, elem) := avl[id_pref]
+
+    enlever elem de la liste l
+  sinon
+
+    si memoire insuffisante ou nombre de tableaux ouverts trop important:
+
+       supprimer_dernier(l, avl)
+
+       tab = lire_fichier("directory/"+pref+".extension") # lire commence par ouvrir et terminer en fermant le fichier, on est d'accord!
+
+  ajouter id_pref en tête de la liste
+
+  avl[id_pref] := (tab, tete(l))
+
+  infos := rechercher(suff, f_desc)
+
+
+var avl: arbre AVL qui associe à un entier un couple (tableau trié de suffixes, élement de liste)
+
+var l : liste d'entiers
+
+Pour chaque k-mer km Faire
+
+  recherche_kmer(km, k1, k, l, avl)
+
+
+Tant que l n'est pas vide:
+
+  supprimer_dernier(l, avl)
+
+
+assert(avl est vide)
+
+
+
+
+Ça peut se paralléliser, mais c'est source de conflits (globalement, il ne faut pas modifier l'AVL et la liste tant qu'un traitement est en cours par un autre processus. Il faut donc poser ce que l'on appelle des verrous (mutex/sémaphores) et dans le cas présent, ça risque surtout de ralentir l'algo tout en créant de véritables sources de bug... Donc pas top ici.
+
+
+
