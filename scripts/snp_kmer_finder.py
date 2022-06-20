@@ -4,8 +4,12 @@
 snp_kmer_finder : rechercher les kmers des snp présents dans une séquence à partir d'un index.
 
 Prend en entrée :
-    une séquence au format fasta 
-    l'index de k-mer fournit par le programme kmer_snp_gen_index.py
+    une séquence au format fasta (option -f)
+    l'index de k-mer fournit par le programme kmer_snp_gen_index.py (option -f)
+Argument optionnels :
+    taille du k-mer (-k)
+    taille du préfixe (-p)
+    --no-prefix : fichier de sortie sous forme de fichier unique
 
 Fournit en sortie :
     - un fichier .tsv trié contenant:
