@@ -52,6 +52,7 @@ def main():
 
     #f_desc = [open(filename, "r") for filename in f"{output_dir}/{kmer_files}"]
 
+    # Ouvrir tous les fichiers
     f_desc = [open(f"{output_dir}/{filename}", "r") for filename in kmer_files]
 
     """pref = "TTTAG"

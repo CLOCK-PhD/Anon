@@ -75,7 +75,7 @@ def main():
     prefix_size = args.prefix_size
     output_unknown_prefix = args.no_pref
     output_file_name = "kmer_finder_results.tsv"
-    uniquify(output_file_name)
+    output_file_name = uniquify(output_file_name)
 
     found_kmer_dict = {}
     not_in_index = []
