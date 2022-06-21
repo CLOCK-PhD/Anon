@@ -15,7 +15,22 @@ Créer un dictionnaire qui sert d'index préfixe pour les k-mers d'une séquence
         Si le préfixe existe, ajouter le suffixe dans la valeur (sans doublon)
     5. Ordonner le dictionnaire
     6. Ordonner chaque liste
-    7. Faire des recherches dans l'index 
+    7. Faire des recherches dans l'index
+
+
+    A FAIRE :
+        - Arrêt de la recherche : faire un stop si on dépasse l'ordre lexico à partir duquel on ne peut plus trouver le mot
+            pour éviter d'aller jusqu'à la fin du fichier quand on ne le trouve pas
+
+        Exemple :
+                    str1 = "AAACG"
+                    str2 = "AAAAA"
+                    str1 > str2
+                    True
+                    str2 > str1
+                    False
+        
+        Donc on peut essayer de mettre un break pour arrêter la recherche dès qu'on dépasse notre SUFFIXE
 """
 import sys
 from typing import OrderedDict
@@ -86,15 +101,13 @@ def main():
         kmers_dict[key].sort()
     print("\tDone.")
 
-    print(len(kmers_dict))
-
     # Parcourir chaque élément de la liste en valeur pour chaque clé
     kmer_count = 0
     for key in kmers_dict:
         for value in kmers_dict[key]:
             kmer_count += 1
 
-    print(f"Nombre de kmers : {kmer_count}")
+    
 
     # 7. Faire les recherches dans l'index
 
@@ -104,9 +117,10 @@ def main():
     kmer_files = [f for f in listdir(output_dir) if isfile(join(output_dir, f))]
     kmer_files.sort()
 
-    # Ouvrir tous les fichiers
+    """# Ouvrir tous les fichiers - plus nécessaire ?
     f_desc = [open(f"{output_dir}/{filename}", "r") for filename in kmer_files]
 
+    print("Parcours des k-mers")
     for key in kmers_dict:
         id_pref = encode(key, kmer_files)
         if id_pref != "nope":
@@ -114,14 +128,74 @@ def main():
                 suffix = value
                 for line in f_desc[id_pref]:
                     if line.split("\t")[0] == suffix:
-                        print(f"Trouvé : {key}{value}")
+                        print(f"Trouvé : {key}{value} à la position {len(line)}")"""
+
+    # Test en parcourant les fichiers l'un après l'autre (vu que c'est ordonné)
+    print("Recherche dans l'index...")
+    not_in_index = []
+    count = 0
+    pbar2 = tqdm(total=len(kmers_dict))
+    for key in kmers_dict:
+        pbar2.update(1)
+        current_file = f"{output_dir}/{key}"
+        reading_position = 0
+        try :
+            with open(current_file, "r") as f:
+                #print(f"\nOuverture du fichier {key}")
+                f.seek(reading_position)
+                for value in kmers_dict[key]:
+                    f.seek(reading_position)
+                    curr_suffix = value
+                    line = f.readline()
+                    if line.split("\t")[0] == curr_suffix :
+                            #print(f"\tTrouvé : {key}{value} à la position {f.tell()}")
+                            reading_position = f.tell() # Pour enregistrer la position et y retourner directement
+                            count += 1
+                            #continue
+                    while line:
+                        #print(f.tell())
+                        line = f.readline()
+                        if line.split("\t")[0] == curr_suffix :
+                            #print(f"\tTrouvé : {key}{value} à la position {f.tell()}")
+                            count += 1
+                            reading_position = f.tell()
+                            #continue
+                        #print(line)
+        except :
+            #print(f"Le fichier {key} n'existe pas")
+            not_in_index.append(key)
+    pbar2.close()
+
+    # Test en parcourant les fichiers l'un après l'autre (vu que c'est ordonné)
+    """for key in kmers_dict:
+        current_file = f"{output_dir}/{key}"
+        try :
+            with open(current_file, "r") as f:
+                for value in kmers_dict[value]:
+                    curr_suffix = value
+                    line = f.readline()
+                    if line.split("\t")[0] == curr_suffix :
+                            print(f"Trouvé : {key}{value} à la position {f.tell()}")
+                    while line:
+                        print(f.tell())
+                        line = f.readline()
+                        print(line)
+        except :
+            print(f"Le fichier {key} n'existe pas")"""
+
+
+
 
 
 
     # Fermer tous les fichiers
-    for f in f_desc:
-        f.close()
-
+    """for f in f_desc:
+        f.close()"""
+    
+    print(f"Taille de l'index :                         {len(kmer_files)}")
+    print(f"Nombre de préfixes trouvés :                {len(kmers_dict)}")
+    print(f"Nombre de kmers dans le dictionnaire :      {kmer_count}")
+    print(f"Nombre de kmers en commun avec l'index :    {count}")
     print("le chat")
 
 if __name__ == '__main__':
