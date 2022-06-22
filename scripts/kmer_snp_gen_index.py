@@ -23,6 +23,8 @@ EN COURS : BARRES DE PROGRESSION
     - Génération du batch kmer          Non - chiant
     - Génération du batch kmer final    Non - chiant
 
+A FAIRE : Ajouter des options pour ressortir les k-mers pour des infos qu'on voudrait
+
 A FAIRE : Créer l'index dans un dossier spécifique
 A FAIRE : Fonction pour la taille idéale du préfixe
 
