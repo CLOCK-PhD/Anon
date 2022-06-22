@@ -3,9 +3,7 @@
 """
 Effectue une recherche des k-mers d'une séquence donnée dans son index correspondant.
 Fournit en sortie les k-mers communs (susceptibles de servir à l'identification).
-
-FONCTIONNE TRES BIEN SI ON TROUVE DES KMERS EN COMMUN
-TRES LENT SI AUCUN KMER COMMUN
+CETTE VERSION CHARGE TOUT LE FICHIER PREFIXE EN MEMOIRE
 
 Créer un dictionnaire qui sert d'index préfixe pour les k-mers d'une séquence :
     clés : préfixe(str)
@@ -83,7 +81,7 @@ def main():
     # 0. Création des variables
     kmers_dict = {}
     matching_kmers_dict = {}
-    output_file_name = "matching_kmers.tsv" # Nom du fichier de sortie
+    output_file_name = "matching_kmers_v2.tsv" # Nom du fichier de sortie
     output_file_name = uniquify(output_file_name)
 
     # À supprimer à la fin des tests
@@ -141,8 +139,50 @@ def main():
     kmer_files = [f for f in listdir(index_dir) if isfile(join(index_dir, f))] # Liste des les fichiers
     kmer_files.sort()
 
-
+    # DEUXIEME TEST - On parcourt chaque ligne et on vérifie si son suffixe est dans la liste du dico
     print("Recherche dans l'index...")
+    count = 0
+    not_in_index = []
+    pbar2 = tqdm(total=len(kmers_dict))
+    for key in kmers_dict:
+        pbar2.update(1)
+        current_file = f"{index_dir}/{key}"
+        try :
+            with open(current_file, "r") as f:
+                lines = f.readlines()
+                for l in lines:
+                    suff = l.split("\t")[0]
+                    if suff in kmers_dict[key]:
+                        count += 1
+                        matching_kmers_dict[key+suff] = l.split("\t")[1:]           
+        except :
+            not_in_index.append(key) # Préfixe absent de l'index
+    pbar2.close()
+
+
+
+
+    # RECHERCHE AVEC CHARGEMENT DU FICHIER PREFIXE COMPLET
+    """print("Recherche dans l'index...")
+    not_in_index = []   # Liste des préfixes qui ne sont pas dans l'index
+    count = 0           # Comptage du nombre de k-mers contenus dans le dictionnaire
+    pbar2 = tqdm(total=len(kmers_dict))
+    for key in kmers_dict:
+        pbar2.update(1)
+        current_file = f"{index_dir}/{key}"
+        try :
+            with open(current_file, "r") as f:
+                for value in kmers_dict[key]:
+                    f.seek(reading_position)
+                    curr_suffix = value
+                    lines = f.readlines()
+                    
+        except :
+            not_in_index.append(key) # Préfixe absent de l'index
+    pbar2.close()"""
+
+    # RECHERCHE AVEC LECTURE PAR LIGNE
+    """print("Recherche dans l'index...")
     not_in_index = []   # Liste des préfixes qui ne sont pas dans l'index
     count = 0           # Comptage du nombre de k-mers contenus dans le dictionnaire
     pbar2 = tqdm(total=len(kmers_dict))
@@ -158,11 +198,10 @@ def main():
                     curr_suffix = value
                     line = f.readline()
                     if line.split("\t")[0] == curr_suffix :
-                        reading_position = f.tell() # Enregistrer la position et y retourner directement
-                        count += 1
-                        # Ajouter la ligne dans le dico des k-mers trouvés
-                        matching_kmers_dict[key+curr_suffix] = line.split("\t")[1:]
-                        pass
+                            reading_position = f.tell() # Enregistrer la position et y retourner directement
+                            count += 1
+                            # Ajouter la ligne dans le dico des k-mers trouvés
+                            matching_kmers_dict[key+curr_suffix] = line.split("\t")[1:]
                     while line:
                         line = f.readline()
                         if line.split("\t")[0] == curr_suffix :
@@ -175,7 +214,7 @@ def main():
                             break # Arrêt de la recherche
         except :
             not_in_index.append(key) # Préfixe absent de l'index
-    pbar2.close()
+    pbar2.close()"""
     
     print()
     print(f"Taille de l'index :                         {len(kmer_files)}")

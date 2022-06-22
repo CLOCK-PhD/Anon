@@ -28,6 +28,8 @@ from os import listdir
 from os.path import isfile, join
 import shutil
 
+from tqdm import tqdm
+
 
 # Générer un nom de dossier unique
 def uniquify(path:str) -> str:
@@ -57,7 +59,7 @@ def main():
     # Création des arguments
     parser = argparse.ArgumentParser(description='Purify the index by making a new one without k-mers found on the reference sequence')
     parser.add_argument("-d", "--directory", dest="directory", help="Path to the directory containing the index")
-    parser.add_argument("-kf", "--kmer-file", dest="kmer_file", help="Path to the sequence fasta file")
+    parser.add_argument("-kf", "--kmer-file", dest="kmer_file", help="Path to the file containing the k-mers to remove from the index")
     parser.add_argument("-p", "--prefix_size", dest="prefix_size", default=5, type=int, help="Prefix size")
 
     # Récupération des valeurs des arguments et attribution
@@ -105,9 +107,12 @@ def main():
         value.sort()
 
     # 4. Parcours du fichier préfixe à la recherche des k-mers à supprimer
+    print("Creating new index...")
+    pbar = tqdm(total=len(kmer_dict))
     for key, value in kmer_dict.items():
         index_file = f"{dir}/{key}"
         new_index_file = f"{output_dir}/{key}"
+        pbar.update()
         with open(index_file, "r") as f:
             # 5. Réécriture du fichier de l'index sans les k-mers multiples
             with open(new_index_file, "w") as nif:
@@ -116,6 +121,7 @@ def main():
                     file_suffix = line.split("\t")[0]
                     if file_suffix not in value:
                         nif.write(line)
+    pbar.close()
 
     # 7. Vérifier les fichiers crées dans le nouvel index
     new_index_files_list = [f for f in listdir(output_dir) if isfile(join(output_dir, f))]

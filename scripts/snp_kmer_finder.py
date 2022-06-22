@@ -3,6 +3,8 @@
 """
 snp_kmer_finder : rechercher les kmers des snp présents dans une séquence à partir d'un index.
 
+PROGRAMME LE PLUS LENT DE LA TERRE
+
 Prend en entrée :
     une séquence au format fasta (option -f)
     l'index de k-mer fournit par le programme kmer_snp_gen_index.py (option -f)
