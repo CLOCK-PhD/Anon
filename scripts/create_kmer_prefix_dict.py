@@ -4,7 +4,6 @@
 Effectue une recherche des k-mers d'une séquence donnée dans son index correspondant.
 Fournit en sortie les k-mers communs (susceptibles de servir à l'identification).
 
-FONCTIONNE TRES BIEN SI ON TROUVE DES KMERS EN COMMUN
 TRES LENT SI AUCUN KMER COMMUN
 
 Créer un dictionnaire qui sert d'index préfixe pour les k-mers d'une séquence :
@@ -25,9 +24,6 @@ Effectue la recherche à partir du dictionnaire sur l'index.
     6. Ordonner chaque liste
     7. Recherche des k-mers dans l'index
     8. Écrire le fichier de sortie
-
-    URGENT : Régler le problème de la recherche sur l'index purifié où la recherche est très lente
-            Voir si on peut renvoyer le curseur de lecture à un endroit adapté
 
     ? A FAIRE : Avec le changement de méthode, on perd le comptage ; l'intégrer à nouveau.
         Voir pour faire un dictionnaire suffixe : comptage plutôt qu'un set
@@ -82,13 +78,13 @@ def main():
 
     # 0. Création des variables
     kmers_dict = {}
-    matching_kmers_dict = {}
+    #matching_kmers_dict = {}
     output_file_name = "matching_kmers.tsv" # Nom du fichier de sortie
     output_file_name = uniquify(output_file_name)
 
     # À supprimer à la fin des tests
-    index_dir = "../data/kmer_snp/chrY_index" # A supprimer à la fin des tests
-    seq_file = "../data/grch37p13/NC_000024.9_Homo_sapiens_chromosome_Y.fasta"
+    #index_dir = "../data/kmer_snp/chrY_index" # A supprimer à la fin des tests
+    #seq_file = "../data/grch37p13/NC_000024.9_Homo_sapiens_chromosome_Y.fasta"
 
     # 1. Charger la séquence en mémoire
     print("Loading sequence...")
@@ -131,7 +127,7 @@ def main():
         kmers_dict[key].sort()
     print("\tDone.")
 
-    # Parcourir chaque élément de la liste en valeur pour chaque clé
+    # Comptage du nombre de k-mers
     kmer_count = 0
     for key in kmers_dict:
         for value in kmers_dict[key]:
@@ -141,8 +137,48 @@ def main():
     kmer_files = [f for f in listdir(index_dir) if isfile(join(index_dir, f))] # Liste des les fichiers
     kmer_files.sort()
 
-
+    # TEST AVEC ÉCRITURE DIRECTE DANS LE FICHIER
     print("Recherche dans l'index...")
+    with open(f"{index_dir}/{output_file_name}", "w") as output_file:
+        not_in_index = []   # Liste des préfixes qui ne sont pas dans l'index
+        count = 0           # Comptage du nombre de k-mers contenus dans le dictionnaire
+        pbar2 = tqdm(total=len(kmers_dict))
+        for key in kmers_dict:
+            pbar2.update(1)
+            current_file = f"{index_dir}/{key}"
+            reading_position = 0 # Position du curseur pour la lecture du fichier
+            try :
+                with open(current_file, "r") as f:
+                    #f.seek(reading_position)
+                    for value in kmers_dict[key]:
+                        f.seek(reading_position)
+                        curr_suffix = value
+                        line = f.readline()
+                        if line.split("\t")[0] == curr_suffix :
+                            reading_position = f.tell() # Enregistrer la position et y retourner directement
+                            count += 1
+                            # Ajouter la ligne dans le dico des k-mers trouvés
+                            #matching_kmers_dict[key+curr_suffix] = line.split("\t")[1:]
+                            output_file.write(f"{key}{line}")
+                            pass
+                        while line:
+                            line = f.readline()
+                            if line.split("\t")[0] == curr_suffix :
+                                count += 1
+                                reading_position = f.tell()
+                                #matching_kmers_dict[key+curr_suffix] = line.split("\t")[1:]
+                                output_file.write(f"{key}{line}")
+                                break
+
+                            elif line.split("\t")[0] > curr_suffix:
+                                break # Arrêt de la recherche
+            except :
+                not_in_index.append(key) # Préfixe absent de l'index
+            kmers_dict[key] = [] # Vide la liste à la fin du parcours pour libérer de la mémoire
+        pbar2.close()
+
+
+    """print("Recherche dans l'index...")
     not_in_index = []   # Liste des préfixes qui ne sont pas dans l'index
     count = 0           # Comptage du nombre de k-mers contenus dans le dictionnaire
     pbar2 = tqdm(total=len(kmers_dict))
@@ -175,8 +211,9 @@ def main():
                             break # Arrêt de la recherche
         except :
             not_in_index.append(key) # Préfixe absent de l'index
-    pbar2.close()
-    
+        kmers_dict[key] = [] # Vide la liste à la fin du parcours pour libérer de la mémoire
+    pbar2.close()"""
+
     print()
     print(f"Taille de l'index :                         {len(kmer_files)}")
     print(f"Nombre de préfixes trouvés :                {len(kmers_dict)}")
@@ -185,11 +222,11 @@ def main():
     print(f"Nombre de préfixes absents de l'index :     {len(not_in_index)}")
 
     # 8. Écrire le dictionnare des k-mers retrouvés dans le fichier ouput :
-    print(f"Creating output file : {output_file_name}")
-    matching_kmers_dict = OrderedDict(sorted(matching_kmers_dict.items()))
-    with open(f"{index_dir}/{output_file_name}", "w") as f:
+    #print(f"Creating output file : {output_file_name}")
+    #matching_kmers_dict = OrderedDict(sorted(matching_kmers_dict.items()))
+    """with open(f"{index_dir}/{output_file_name}", "w") as f:
         for key, value in matching_kmers_dict.items() :
-            f.write(f"{key}\t{value[0]}\t{value[1]}\t{value[2]}\t{value[3]}")
+            f.write(f"{key}\t{value[0]}\t{value[1]}\t{value[2]}\t{value[3]}")"""
 
 if __name__ == '__main__':
     main()
