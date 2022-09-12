@@ -68,7 +68,7 @@ def main():
     kmer_to_del_file = args.kmer_file
     prefix_size = args.prefix_size
 
-    output_dir = f"{dir}/purified_index"
+    output_dir = f"{dir}/index"
     kmer_dict = {}
     new_index_files_list = []
     index_files_list = [f for f in listdir(dir) if isfile(join(dir, f))]
@@ -141,6 +141,10 @@ def main():
     for i in files_to_copy:
         #os.replace(f"{dir}/{i}", f"{output_dir}/{i}") # Pour déplacer, à faire une fois les tests terminés
         shutil.copy(f"{dir}/{i}", f"{output_dir}/{i}") # Pour copier, pendant les tests
+
+    # 8c. Suppression des fichiers
+    for i in index_files_list:
+        os.remove(f"{dir}/{i}")
 
     print("le chat")
 
