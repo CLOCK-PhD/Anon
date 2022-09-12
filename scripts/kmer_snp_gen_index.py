@@ -24,6 +24,7 @@ EN COURS : BARRES DE PROGRESSION
     - Génération du batch kmer final    Non - chiant
 
 A FAIRE : Ajouter des options pour ressortir les k-mers pour des infos qu'on voudrait
+A FAIRE : Améliorer 
 
 A FAIRE : Créer l'index dans un dossier spécifique
 A FAIRE : Fonction pour la taille idéale du préfixe
@@ -385,11 +386,11 @@ def main() :
     parser = argparse.ArgumentParser(description='Extract kmers at SNP positions from a reference VCF and fasta file')
     parser.add_argument("-i", "--input", dest="fasta_file", help="fasta input file")
     parser.add_argument("-r", "--reference", dest="ref", help="VCF SNP reference file")
-    parser.add_argument("-k", "--kmer_size", dest="kmer_size", default=21, type=int, help="Select k-mer size")
-    parser.add_argument("-n", dest="kmers_per_output_file", default=100000, type=int, help="Number of kmers per output file for the heap merge")
-    parser.add_argument("-o", "--ouput", dest="output_dir", default="generated_kmers", help="Output folder name")
-    parser.add_argument("-b", "--batch_size", dest="batch_size", default=1000, type=int, help="Limit of k-mer files to merge during execution")
-    parser.add_argument('--no-index', dest="index" ,action='store_false', help="Add this option to create a simple output file in lexicographic order instead of a prefix index")
+    parser.add_argument("-k", "--kmer_size", dest="kmer_size", default=21, type=int, help="(Optional) Select k-mer size")
+    parser.add_argument("-n", dest="kmers_per_output_file", default=100000, type=int, help="(Optional) Number of kmers per output file for the heap merge")
+    parser.add_argument("-o", "--ouput", dest="output_dir", default="generated_kmers", help="(Recommanded / Optional) Output folder name")
+    parser.add_argument("-b", "--batch_size", dest="batch_size", default=1000, type=int, help="(Optional) Limit of k-mer files to merge during execution")
+    parser.add_argument('--no-index', dest="index" ,action='store_false', help="(Optional) Add this option to create a simple output file in lexicographic order instead of a prefix index")
 
     # Récupération des valeurs des arguments et attribution
     args = parser.parse_args()
