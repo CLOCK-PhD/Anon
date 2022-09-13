@@ -2,7 +2,12 @@
 
 """
 Un programme pour convertir le fichier de sortie "mathching_kmers.tsv" de create_kmer_prefix_dict.py
-en fichier fasta afin de pouvoir faire des tests avec 
+en fichier fasta afin de pouvoir faire des tests avec
+
+REMARQUES :
+Transipedia en ligne ne prend que des fichiers fasta d'environ 1Mo, ce qui représente avec le format actuel environ 20000 kmers.
+On peut envisager de faire une sortie d'un dossier contenant les kmers par fichiers de 20k kmers.
+
 """
 
 import argparse
