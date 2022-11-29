@@ -2,10 +2,11 @@
 
 # Fetch dbsnp VCF file
 
-import sys
-import os
+"""
+Script pour télécharger la dernière version de dbSNP sur GRCH38
+"""
+
 from ftplib import FTP
-import time
 import wget
 
 # le script ici fonctionne
@@ -24,5 +25,6 @@ ftp.retrbinary("RETR " + filename, open(filename, "wb").write)
 ftp.quit()"""
 
 # là c'est beaucoup plus court
-link = "https://ftp.ncbi.nih.gov/snp/organisms/human_9606/VCF/00-All.vcf.gz"
+#link = "https://ftp.ncbi.nih.gov/snp/organisms/human_9606/VCF/00-All.vcf.gz"
+link = "https://ftp.ncbi.nih.gov/snp/latest_release/VCF/GCF_000001405.39.gz"
 wget.download(link)
