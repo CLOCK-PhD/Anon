@@ -4,18 +4,18 @@
 varnum_kmer.py
 
 Un programme comptant le nombre de sites de variation possibles qu'on peut retrouver dans un k-mer de taille donnée.
-Les sites de variations sont définis sur la séquence de référence grâce aux données dbSNP, pour un chromosome.
 
 Le nombre de variations par kmer est stockée dans un dictionnaire.
     Clé : Nombre de variations pour un kmer
     Valeur : Occurences (nombre de fois qu'on trouve un kmer avec ce nombre de variations)
 
 Entrée :
-    Séquence de référence du chromosome - Pourquoi ?
     Fichier vcf de dbSNP
 
 Sortie :
     Histogramme du nombre de variations au sein d'un k-mer
+
+    AUTRE METHODE - liste
 """
 
 
@@ -24,8 +24,7 @@ Sortie :
 
 import re
 import argparse
-#import os
-#from Bio import SeqIO
+from tqdm import tqdm
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -72,63 +71,81 @@ def get_vcf_line_info(line)-> tuple:
 
 def main():
 
-    ref_seq = "../data/grch38p13/GCF_000001405.39/chrY.fna"     # Séquence de référence du chromosome
-    dbsnp_vcf = "../data/snp_latest/24.vcf"                     # Fichier .vcf dbSNP du chromosome
-    kmerSize = 31
+    # Gestion des arguments
+    parser = argparse.ArgumentParser()
 
-    # Récupérer la séquence du chromosome en mémoire - Aucune idée de pourquoi j'ai mis ça ici
-    """seq = []
-    with open(ref_seq) as handle :
-        for record in SeqIO.parse(handle, "fasta"):
-            seq = record.seq"""
+    # Création des arguments
+    parser = argparse.ArgumentParser(description='Draws a bar plot showing the number of variations in a k-mer from a vcf file frome dbSNP')
+    parser.add_argument("-i", "--input", dest="input", help="Path to the directory containing the vcf file")
+    parser.add_argument("-k", "--kmer_size", dest="kmer_size", default=31, type=int, help="Select k-mer size")
+
+    # Récupération des valeurs des arguments et attribution
+    args = parser.parse_args()
+    dbsnp_vcf = args.input          # Dossier contenant l'index
+    kmerSize = args.kmer_size          # Taille du k-mer
+
+    #dbsnp_vcf = "../data/snp_latest/common_14.vcf"                     # Fichier .vcf dbSNP du chromosome
+    #kmerSize = 31
 
     # Dictionnaire des kmers et leurs variations :
     varnumDict = {}
 
+    # Récupérer le nombre de lignes
+    lineNumber = 0
+    with open(dbsnp_vcf, "r") as vcf :
+        for line in vcf :
+            lineNumber += 1
+
     # Ouverture du fichier vcf
+    pbar = tqdm(total=lineNumber - kmerSize)
     with open(dbsnp_vcf, "r") as vcf:
 
-        count = 0   # Pour stoper la boucle pendant les tests
-
+        count = 0
         position = 0    # Définir la position de départ du curseur
         line = vcf.readline()
-        while line :  # Ajouter "and count < 10" pour les tests
+        while line and count < lineNumber - kmerSize :
+            pbar.update(1)
             proximity_count = 0
-            # Début de la boucle
-            print()
-            print(f"Boucle {count}")
             vcf.seek(position)
-            #print(f"Position du curseur : {vcf.tell()}")
             chrom, snp_ref, snp_pos, rs_id, snp_alt, vc = get_vcf_line_info(line) # Récupérer les infos de la ligne
-            #print(f"\tChrom : {chrom}\tPosition : {snp_pos}")
             
             line  = vcf.readline()  # Lire la ligne suivante
             position = vcf.tell()   # Donner la position de la nouvelle ligne
-            count += 1  # Pour les tests, à supprimer
+            count += 1
             chrom2, snp_ref2, snp_pos2, rs_id2, snp_alt2, vc2 = get_vcf_line_info(line)
 
             # Comparaison et lecture des lignes suivantes :
-            if line : # test pour le cas de la dernière ligne qui fait une erreur
-                print("test if line")
+            if line and snp_pos != snp_pos2 : # test pour le cas de la dernière ligne qui fait une erreur
                 while snp_pos2 < snp_pos + kmerSize :
-                    proximity_count += 1
+                    #proximity_count += 1
                     line2 = vcf.readline()
                     if line2 :
-                        print("test if line 2")
-                        chrom2, snp_ref2, snp_pos2, rs_id2, snp_alt2, vc2 = get_vcf_line_info(line2)
+                        chrom2, snp_ref2, snp_tmp, rs_id2, snp_alt2, vc2 = get_vcf_line_info(line2)
+                        if snp_tmp == snp_pos2 :
+                            continue
+                        else :
+                            proximity_count += 1
+                            snp_pos2 = snp_tmp
 
+                # Remplissage du dictionnaire :
+                try :
+                    varnumDict[proximity_count] += 1    # Incrémentation si la valeur des variations existe déjà
+                except KeyError :
+                    varnumDict[proximity_count] = 1     # Création de la clé et initialisation de sa valeur à 1
             #print(f"\tCompteur de SNP à proximité : {proximity_count}")
 
-            # Remplissage du dictionnaire :
-            try :
-                varnumDict[proximity_count] += 1    # Incrémentation si la valeur des variations existe déjà
-            except KeyError :
-                varnumDict[proximity_count] = 1     # Création de la clé et initialisation de sa valeur à 1
+    pbar.close()
 
-    #print(varnumDict)
-    plt.bar(list(varnumDict.keys()), varnumDict.values(), color="r")
-    plt.xlabel(f"Nombre de variations par {kmerSize}-mer")
-    plt.ylabel("Nombre de cas")
+    print(varnumDict)
+
+    # Histogramme
+
+    fig, ax = plt.subplots()
+    y = varnumDict.values() # y
+    x = list(varnumDict.keys()) # y
+    ax.bar(x, y, log = True, ec="k", color="red")
+    ax.set_xlabel(f"Nombre de variations par {kmerSize}-mer")
+    ax.set_ylabel("Nombre de cas")
     plt.show()
 
     print("le chat")
