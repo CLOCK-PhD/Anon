@@ -17,7 +17,11 @@ Tous les fichiers sont ensuite à nouveau triés et soit :
 """
 
 """
-EN COURS : BARRES DE PROGRESSION
+EN COURS : Créer un dictionnaire qui contient les redondances
+            Liste le nombre de redondances
+            GERER CES PUTAINS DE CODES IUPAC DE MERDE DE LA VERSION GRCH38
+
+A FAIRE : BARRES DE PROGRESSION
     - Merge normal                      OK
     - Merge final / Creation Index      Non - chiant
     - Génération du batch kmer          Non - chiant
