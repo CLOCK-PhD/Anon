@@ -15,6 +15,7 @@ Entrée :
 Sortie :
     Histogramme du nombre de variations au sein d'un k-mer
 """
+# A FAIRE : prendre plusieurs fichiers en même temps pour sortir tous les plots + faire un plot global
 
 import re
 import argparse
@@ -69,11 +70,15 @@ def main():
     # Création des arguments
     parser = argparse.ArgumentParser(description='Draws a bar plot showing the number of variations in a k-mer from a vcf file frome dbSNP')
     parser.add_argument("-i", "--input", dest="input", help="Path to the directory containing the vcf file")
+    parser.add_argument("-o", "--ouput", dest = "output", action="store_true", help="(Optional) Saves file")
+    parser.add_argument("-s", "--show", dest = "show", action="store_true", help="(Optional) Shows plot")
     parser.add_argument("-k", "--kmer_size", dest="kmer_size", default=31, type=int, help="Select k-mer size")
     # Récupération des valeurs des arguments et attribution
     args = parser.parse_args()
     dbsnp_vcf = args.input          # Dossier contenant l'index
-    kmerSize = args.kmer_size          # Taille du k-mer
+    kmerSize = args.kmer_size       # Taille du k-mer
+    showPlot = args.show            # Afficher le plot
+    savePlot = args.output          # Sauvegarder le plot
 
     # Dictionnaire des kmers et leurs variations :
     varnumDict = {}
@@ -124,14 +129,21 @@ def main():
     print(varnumDict)
 
     # Histogramme
-    fig, ax = plt.subplots()
-    y = varnumDict.values() # y
-    x = list(varnumDict.keys()) # y
-    ax.bar(x, y, log = True, ec="k", color="red")
-    ax.set_xlabel(f"Nombre de variations par {kmerSize}-mer")
-    ax.set_ylabel("Nombre de cas")
-    plt.show()
-
+    if savePlot or showPlot :
+        fig, ax = plt.subplots()
+        y = varnumDict.values() # y
+        x = list(varnumDict.keys()) # y
+        ax.bar(x, y, log = True, ec="k", color="red")
+        ax.set_xlabel(f"Nombre de variations par {kmerSize}-mer")
+        ax.set_ylabel("Nombre de cas")
+    # Sauvarge de l'image
+    if savePlot :
+        outputFileName = dbsnp_vcf.split(".")[0]
+        print(outputFileName)
+        plt.savefig(f"{outputFileName}.png")
+    # Affichage de l'image
+    if showPlot :
+        plt.show()
     print("le chat")
 
 if __name__ == '__main__':
