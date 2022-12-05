@@ -14,13 +14,7 @@ Entrée :
 
 Sortie :
     Histogramme du nombre de variations au sein d'un k-mer
-
-    AUTRE METHODE - liste
 """
-
-
-# RÉSOLUTION POSSIBLE DU PROBLÈME : 
-# Lire une première fois le fichier, compter le nombre de ligne, arrêter la boucle à len(file) - kmerSize
 
 import re
 import argparse
@@ -70,22 +64,16 @@ def get_vcf_line_info(line)-> tuple:
 
 
 def main():
-
     # Gestion des arguments
     parser = argparse.ArgumentParser()
-
     # Création des arguments
     parser = argparse.ArgumentParser(description='Draws a bar plot showing the number of variations in a k-mer from a vcf file frome dbSNP')
     parser.add_argument("-i", "--input", dest="input", help="Path to the directory containing the vcf file")
     parser.add_argument("-k", "--kmer_size", dest="kmer_size", default=31, type=int, help="Select k-mer size")
-
     # Récupération des valeurs des arguments et attribution
     args = parser.parse_args()
     dbsnp_vcf = args.input          # Dossier contenant l'index
     kmerSize = args.kmer_size          # Taille du k-mer
-
-    #dbsnp_vcf = "../data/snp_latest/common_14.vcf"                     # Fichier .vcf dbSNP du chromosome
-    #kmerSize = 31
 
     # Dictionnaire des kmers et leurs variations :
     varnumDict = {}
@@ -99,7 +87,6 @@ def main():
     # Ouverture du fichier vcf
     pbar = tqdm(total=lineNumber - kmerSize)
     with open(dbsnp_vcf, "r") as vcf:
-
         count = 0
         position = 0    # Définir la position de départ du curseur
         line = vcf.readline()
@@ -133,13 +120,10 @@ def main():
                 except KeyError :
                     varnumDict[proximity_count] = 1     # Création de la clé et initialisation de sa valeur à 1
             #print(f"\tCompteur de SNP à proximité : {proximity_count}")
-
     pbar.close()
-
     print(varnumDict)
 
     # Histogramme
-
     fig, ax = plt.subplots()
     y = varnumDict.values() # y
     x = list(varnumDict.keys()) # y
