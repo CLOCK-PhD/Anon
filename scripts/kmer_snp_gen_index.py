@@ -432,7 +432,7 @@ def main() :
     print(f"Generating k-mer files : batch {merged_file_number}")
     with open(ref, "r") as vcf:
         for line in vcf:
-            # Merge et suppression des fichiers
+            # Merge et suppression des fichiers quand on atteint le nombre limite de fichiers
             if len(output_file_list) == batch_size :
                 print(f"\tMerging k-mers batch {merged_file_number}")
                 merged_file_list_for_final_merge.append(merge_kmers(output_dir, merged_file_number, output_file_list))
@@ -451,6 +451,7 @@ def main() :
             # Place les kmers générés dans le dictionnaire
             for kmer in kmer_list :
                 if len(kmers) < kmers_per_file :
+                    # ON MODIFIE ICI : l'écrasement de l'ancien k-mer par le nouveau a lieu là - à modifier
                     kmers[kmer[0]] = (rs_id, chrom, snp_pos, kmer[1])
                 if len(kmers) == kmers_per_file :
                     output_file_name = f"{output_dir}/{str(file_number)}_snp_k{kmer_size}.tsv"
