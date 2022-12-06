@@ -1,12 +1,14 @@
 #!/usr/bin/python3
 
 """
-Divise et découpe le fichier vcf de dbSNP en plusieurs fichiers pour faciliter l'utilisation de kmer_snp_gen_index.py
+Divise et découpe le fichier vcf de dbSNP (récupéré avec fetch_dbsnp_vcf.py) en plusieurs fichiers pour faciliter l'utilisation de kmer_snp_gen_index.py
 
 Découpe le fichier vcf en fichiers :
     - header
     - chromosomes
 """
+
+# A FAIRE : LES ARGUMENTS POUR LES FICHIERS D'ENTREE ET DE SORTIE
 
 import re
 from tqdm import tqdm
@@ -62,15 +64,10 @@ for e in chrom_list :
     fileName = fileName + ".vcf"
     chromListForFiles.append(fileName)
     print(f"\t{e}")
-# exporter la liste des chromosomes dans un fichier (pour changer les noms)
 
 # 2. Découper le fichier par chromosomes :
 
-# Ouvrir tous les fichiers
-#files = [open(filename, "r") for filename in chrom_list]
-
 pbar = tqdm(total=total_count)
-
 
 with open(input_file, "r") as vcf :
     for line in vcf :
