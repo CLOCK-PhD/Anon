@@ -14,12 +14,26 @@ un merge est réalisé pour les trier dans un nouveau fichier.
 Tous les fichiers sont ensuite à nouveau triés et soit :
     - organisés en index préfixe/suffixe (défaut)
     - réunis dans un fichier final_merge.tsv (option)
+
+Déroulement :
+    1. Création du dossier de sortie (avec vérification du nom)
+    2. Placer la séquence fasta en mémoire
+    3. Ouverture et parcours du vcf :
+        3.1 Récupération des informations du vcf
+        3.2 Génération des kmers à partir des kmers_max
+        3.3 Place les kmers générés dans le dictionnaire
+        3.4 Écriture dans un fichier quand le dictionnaire atteint la limite de kmers
+    4. Merge et suppression des fichiers quand on atteint le nombre limite de fichiers
+    5. Exporter les derniers kmers dans un fichier
+    6. Créer un index des préfixes ou un fichier de merge final
 """
 
 """
 EN COURS : Créer un dictionnaire qui contient les redondances
             Liste le nombre de redondances
-            GERER CES PUTAINS DE CODES IUPAC DE MERDE DE LA VERSION GRCH38
+            
+            Changer le nom kmer_max par umer, parce qu'en fait le kmer max est un (2k-1)mer
+                (k = lettre 11, 2x11-1 = 21, donc u)
 
 A FAIRE : BARRES DE PROGRESSION
     - Merge normal                      OK
@@ -28,10 +42,8 @@ A FAIRE : BARRES DE PROGRESSION
     - Génération du batch kmer final    Non - chiant
 
 A FAIRE : Ajouter des options pour ressortir les k-mers pour des infos qu'on voudrait
-A FAIRE : Améliorer 
 
 A FAIRE : Créer l'index dans un dossier spécifique
-A FAIRE : Fonction pour la taille idéale du préfixe
 
 ? A FAIRE : lire tous les chromosomes pour lancer le programme en une fois
     - Détecter les chromosomes différents
@@ -406,7 +418,7 @@ def main() :
     batch_size = args.batch_size
     make_index = args.index
 
-    # Création du dossier de sortie
+    # 1. Création du dossier de sortie
     try :
         os.makedirs(output_dir)
     except FileExistsError:
@@ -421,18 +433,18 @@ def main() :
     merged_file_list_for_final_merge = []   # Liste des fichiers pour le merge final
     prefix_size = 5                         # A modifier plus tard par une fonction qui trouvera la taille idéale du préfixe.
 
-    # Récupérer la séquence du chromosome en mémoire
+    # 2. Récupérer la séquence du chromosome en mémoire
     seq = []
     with open(input_file) as handle :
         for record in SeqIO.parse(handle, "fasta"):
             seq = record.seq
 
-    # Ouverture et parcours du fichier vcf de référence
+    # 3. Ouverture et parcours du fichier vcf de référence
     print("Generating k-mers...")
     print(f"Generating k-mer files : batch {merged_file_number}")
     with open(ref, "r") as vcf:
         for line in vcf:
-            # Merge et suppression des fichiers quand on atteint le nombre limite de fichiers
+            # 4. Merge et suppression des fichiers quand on atteint le nombre limite de fichiers
             if len(output_file_list) == batch_size :
                 print(f"\tMerging k-mers batch {merged_file_number}")
                 merged_file_list_for_final_merge.append(merge_kmers(output_dir, merged_file_number, output_file_list))
@@ -440,24 +452,38 @@ def main() :
                 output_file_list = []   # Réinitialisation de la liste des fichiers à merge
                 print(f"Generating k-mer files : batch {merged_file_number}")
 
-            # Récupération des informations
+            # 3.1 Récupération des informations
             chrom, snp_ref, snp_pos, rs_id, snp_alt, vc = get_vcf_line_info(line)
                 
-            # Génération des kmers à partir des kmers_max
+            # 3.2 Génération des kmers à partir des kmers_max
             kmer_max_list = get_kmer_from_pos(seq, snp_pos, vc, kmer_size, snp_ref, snp_alt)
             for kmer_max in kmer_max_list:
                 kmer_list = kmer_generator(kmer_size, kmer_max)
 
-            # Place les kmers générés dans le dictionnaire
+            # 3.3 Place les kmers générés dans le dictionnaire
             for kmer in kmer_list :
+                # Remplissage du dictionnaire avec les kmers générés.
                 if len(kmers) < kmers_per_file :
                     # ON MODIFIE ICI : l'écrasement de l'ancien k-mer par le nouveau a lieu là - à modifier
-                    kmers[kmer[0]] = (rs_id, chrom, snp_pos, kmer[1])
+                    # kmer[0] : séquence ; kmer[1] : position
+                    #kmers[kmer[0]] = (rs_id, chrom, snp_pos, kmer[1]) # ORIGINAL
+
+                    # TEST : On rajoute un élément au tuple : un tableau contenant les rsid des kmers identiques
+                    #   Lors de l'écriture, ne pas les écrire et les mettre dans le dico des redondances
+                    #   LORS DU MERGE : TROUVER ET ELIMINER LES IDENTIQUES
+                    #   OU : vérifier s'ils sont présents dans le dico des redondants
+                    try:
+                        kmers[kmer[0]][4].append(rs_id)
+                    except KeyError:
+                        kmers[kmer[0]] = (rs_id, chrom, snp_pos, kmer[1])
+                # 3.4 Écriture dans un fichier quand le dictionnaire atteint la limite de kmers
                 if len(kmers) == kmers_per_file :
                     output_file_name = f"{output_dir}/{str(file_number)}_snp_k{kmer_size}.tsv"
                     kmers = OrderedDict(sorted(kmers.items()))
                     with open(output_file_name, "w", encoding="utf-8") as f:
                         for kmer, values in kmers.items() :
+                            # kmer = séquence (str) ; values = 0:rsid, 1:chrom, 2:snp_pos, 3:kmer_pos (tuple)
+                            #print(values)
                             line_output = f"{kmer}\t{values[0]}\t{values[1]}\t{values[2]}\t{values[3]}\n"
                             f.write(line_output)
                     kmers={} # Réinitialisation du dictionnaire des kmers
@@ -465,7 +491,7 @@ def main() :
                     file_number += 1
     
     merged_file_list_for_final_merge += output_file_list # Ajouter les derniers fichiers de kmers dans la liste du merge final
-    # Exporter les derniers kmers dans un fichier
+    # 5. Exporter les derniers kmers dans un fichier
     output_file_name = f"{output_dir}/{str(file_number)}_snp_k{kmer_size}.tsv"
     kmers = OrderedDict(sorted(kmers.items()))
     with open(output_file_name, "w", encoding="utf-8") as f:
@@ -474,7 +500,7 @@ def main() :
             f.write(line_output)        
         merged_file_list_for_final_merge.append(output_file_name) # Ajout du dernier fichier à la liste du merge final
 
-    # Créer un index des préfixes ou un fichier de merge final
+    # 6. Créer un index des préfixes ou un fichier de merge final
     if make_index:
         createIndex(output_dir, merged_file_list_for_final_merge, prefix_size)
     else :
