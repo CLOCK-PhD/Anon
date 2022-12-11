@@ -17,7 +17,13 @@ from tqdm import tqdm
 def convertChromName(c:str)->str:
     res = re.search("NC_00+([0-9]{1,2}).*$", c)
     if res :
-        return res.group(1)
+        chrom = res.group(1)
+        if res.group(1) == "23":
+            return "X"
+        elif res.group(1) == "24":
+            return "Y"
+        else :
+            return res.group(1)
     else :
         return c
 
