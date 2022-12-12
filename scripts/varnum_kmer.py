@@ -22,6 +22,8 @@ import argparse
 from tqdm import tqdm
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.linear_model import LinearRegression
 
 def get_vcf_line_info(line)-> tuple:
     """Récupère les informations contenues dans chaque ligne du fichier VCF de SNPdb.
@@ -83,9 +85,11 @@ def main():
     # Dictionnaire des kmers et leurs variations :
     varnumDict = {}
 
-    # Récupérer le nombre de lignes
+    # Récupérer le nombre de lignes et les infos
     lineNumber = 0
     with open(dbsnp_vcf, "r") as vcf :
+        first_line = vcf.readline()
+        chrom, snp_ref, snp_pos, rs_id, snp_alt, vc = get_vcf_line_info(first_line)
         for line in vcf :
             lineNumber += 1
 
@@ -129,22 +133,24 @@ def main():
     print(varnumDict)
 
     # Histogramme
+    y = varnumDict.values() # y
+    x = list(varnumDict.keys()) # y
     if savePlot or showPlot :
         fig, ax = plt.subplots()
-        y = varnumDict.values() # y
-        x = list(varnumDict.keys()) # y
         ax.bar(x, y, log = True, ec="k", color="red")
+        ax.set_title(f"Chromosome {chrom}")
         ax.set_xlabel(f"Nombre de variations par {kmerSize}-mer")
         ax.set_ylabel("Nombre de cas")
-    # Sauvarge de l'image
+        plt.title(f"Chromosome {chrom}")
+    # Sauvegarde de l'image
     if savePlot :
-        outputFileName = dbsnp_vcf.split(".")[0]
+        outputFileName = chrom
         print(outputFileName)
         plt.savefig(f"{outputFileName}.png")
     # Affichage de l'image
     if showPlot :
         plt.show()
-    print("le chat")
+    #print("le chat")
 
 if __name__ == '__main__':
     main()
