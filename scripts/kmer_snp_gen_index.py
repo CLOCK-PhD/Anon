@@ -29,6 +29,7 @@ Déroulement :
 """
 
 """
+A FAIRE EN PRIO : VIRER LES KMERS AVEC DES N
 EN COURS : Créer un dictionnaire qui contient les redondances
             Liste le nombre de redondances
             
@@ -125,7 +126,8 @@ def get_SNV_kmer_max(sequence:SeqIO, snp_pos:int, kmer_size:int, snp_alt:list) -
     r_kmer = sequence[snp_pos+1 : snp_pos + kmer_size]
     for alt in snp_alt :
         kmer_max = l_kmer + alt + r_kmer
-        kmer_max_list.append((kmer_max, kmer_pos))
+        if "N" not in kmer_max :
+            kmer_max_list.append((kmer_max, kmer_pos))
     return kmer_max_list
 
 # Récupérer le kmer_max pour DEL :
@@ -296,7 +298,7 @@ def kmer_generator(kmer_size:int, kmer_to_cut:SeqIO) -> list:
     kmer_list = []
     for i in range(0, kmer_size, 1):
         kmer = (kmer_to_cut[0][i : i + kmer_size].upper(), int(kmer_to_cut[1]) + i)
-        if len(kmer[0]) == kmer_size: # pour garder des kmer de taille voulue
+        if len(kmer[0]) == kmer_size : # pour garder des kmer de taille voulue
             kmer_list.append(kmer)
     #pprint(f"kmer_list : \n{kmer_list}")
     return kmer_list
@@ -437,7 +439,7 @@ def main() :
     seq = []
     with open(input_file) as handle :
         for record in SeqIO.parse(handle, "fasta"):
-            seq = record.seq
+            seq = record.seq.upper()
 
     # 3. Ouverture et parcours du fichier vcf de référence
     print("Generating k-mers...")
@@ -466,16 +468,16 @@ def main() :
                 if len(kmers) < kmers_per_file :
                     # ON MODIFIE ICI : l'écrasement de l'ancien k-mer par le nouveau a lieu là - à modifier
                     # kmer[0] : séquence ; kmer[1] : position
-                    #kmers[kmer[0]] = (rs_id, chrom, snp_pos, kmer[1]) # ORIGINAL
+                    kmers[kmer[0]] = (rs_id, chrom, snp_pos, kmer[1]) # ORIGINAL
 
                     # TEST : On rajoute un élément au tuple : un tableau contenant les rsid des kmers identiques
                     #   Lors de l'écriture, ne pas les écrire et les mettre dans le dico des redondances
                     #   LORS DU MERGE : TROUVER ET ELIMINER LES IDENTIQUES
                     #   OU : vérifier s'ils sont présents dans le dico des redondants
-                    try:
+                    """try:
                         kmers[kmer[0]][4].append(rs_id)
                     except KeyError:
-                        kmers[kmer[0]] = (rs_id, chrom, snp_pos, kmer[1])
+                        kmers[kmer[0]] = (rs_id, chrom, snp_pos, kmer[1])"""
                 # 3.4 Écriture dans un fichier quand le dictionnaire atteint la limite de kmers
                 if len(kmers) == kmers_per_file :
                     output_file_name = f"{output_dir}/{str(file_number)}_snp_k{kmer_size}.tsv"
