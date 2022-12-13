@@ -79,10 +79,8 @@ class Variant :
 
     @property
     def variantProperties(self):
-        print(f"{self._rsid}\t{self._chr}\t{self._snp}\
-            \t{self._snpPos}\t{self._relPos}\
-            \t{self._kmersCount}\t{self._ambiguousKmersCount}")
-        
+        ppty = f"{self._rsid}\t{self._chr}\t{self._snp}\t{self._snpPos}\t{self._relPos}\t{self._kmersCount}\t{self._ambiguousKmersCount}"
+        return ppty
 
 if __name__ == '__main__':
     print("le chat")

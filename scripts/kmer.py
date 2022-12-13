@@ -33,6 +33,12 @@ class Kmer :
     # Fonctions
     def addVariant(self, var:Variant):
         self._variants.append(var)
+
+    def show_kmer(self):
+        print(self._sequence)
+        for v in self._variants:
+            print(v.variantProperties)
+        print(f"In genome ? : {self._in_genome}")
         
 
 if __name__ == '__main__':
@@ -48,13 +54,14 @@ if __name__ == '__main__':
     # Création de la classe :
     kmer = Kmer("ATGC")
     print(kmer.sequence)
-    print(kmer.variants)
     print(kmer.in_genome)
     kmer.addVariant(variant1)
     print(kmer.variants)
     kmer.addVariant(variant2)
     print(kmer.variants)
+    print(kmer.variants[0].rsid)
+    print(kmer.variants[1].rsid)
+    print(f"longueur séquence : {len(kmer.sequence)}")
 
-    for e in kmer.variants:
-        e.variantProperties
+    kmer.show_kmer()
 
