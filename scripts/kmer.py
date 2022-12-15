@@ -1,5 +1,7 @@
 #!/usr/bin/python3
 
+# En fait on va pas utiliser cette classe.
+
 from variant import Variant
 
 class Kmer :
