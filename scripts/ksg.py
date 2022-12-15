@@ -7,12 +7,27 @@ Version orientée objet de kmer_snp_gen_index.py
 
 On copie plein de trucs de l'ancien fichier et on voit comment ça se passe ici.
 
-Les k-mers sont générés à partir de (2k-1)mers ; ils seront nommés u-mer (k=11, u=2*11-1).
+Les k-mers sont générés à partir de (2k-1)mers ;
+ils seront nommés u-mer (k=11, u=2*11-1).
+
+Les variants (de la classe Variant), sont des kmers identiques à d'autres,
+mais qui proviennent d'un autre SNP.
+
+On va essayer d'intégrer la purification de l'index dans ce programme.
 """
 
 """
 Notes :
     - Les k-mers contenant un N ne sont pas gardés dans kmerGenerator()
+    - La classe Kmer ne sera pas utilisée parce qu'elle complique le tri
+    - On va garder la méthode avec le dictionnaire et on aura :
+        clé = séquence ; valeur = [Variant]
+        Si on retrouve une clé (donc la seq d'un kmer),
+        on lui ajoute le "variant"
+        Dans le cas contraire, on crée la clé avec son "variant".
+    - Revoir le nom "variant" du coup, c'est pas super clair en fait
+    - Vérifier l'histoire du SNP dans le variant :
+        je crois que je mets l'original et pas le variant
 """
 import re
 
@@ -22,6 +37,7 @@ from kmer import Kmer
 from pprint import pprint
 from Bio import SeqIO
 from typing import OrderedDict
+from tqdm import tqdm
 
 # Récupérer les informations contenues dans le VCF
 def getVcfLineInfo(line)-> tuple:
@@ -262,16 +278,25 @@ def kmerGenerator(kmerSize:int, umerToCut:str) -> list:
     return kmerList
 
 def kmerObjGen(kmerSize:int, umerToCut:str, rsid:str, chrom:str, snp:str, snpPos:int):
+    #print(f"appel {umerToCut}")
     kmerList = []
     for i in range(0, kmerSize, 1):
         # kmer[0] : séquence ; kmer[1] : position du kmer
         relPos = int(umerToCut[1]) + i
-        kmer = Kmer(umerToCut[0][i : i + kmerSize].upper())
+        kmer = umerToCut[0][i : i + kmerSize].upper()
+        #in_genome = False
         var = Variant(rsid, chrom, snp, snpPos, relPos, 0, 0)
-        if len(kmer.sequence) == kmerSize and "N" not in kmer.sequence: # pour garder des kmer de taille voulue
-            kmer.addVariant(var)
-            kmerList.append(kmer)
+        if len(kmer) == kmerSize and "N" not in kmer:
+            # : pour garder des kmer de taille voulue
+            # : pour exclure les kmers avec un "N"
+            #kmerList.append((kmer, var, in_genome))
+            kmerList.append([kmer, var])
     #pprint(f"kmerList : \n{kmerList}")
+    # Ajuster le kmerCount de chaque variant
+    for k in kmerList :
+        k[1].kmersCount = len(kmerList)
+        #print(f"{k[0]} - {k[1].rsid} {k[1].relPos} {k[1].kmersCount} {k[1].ambiguousKmersCount}")
+    #pprint(kmerList)
     return kmerList
 
 def main():
@@ -283,13 +308,16 @@ def main():
 
     # Création des variables
     kmers = {}                              # Dictionnaire contenant les kmers
+    dupKmers = {}                           # Dico des kmers multiples
     kmersObj = []                           # Test - Liste des objets Kmer
     file_number = 0                         # Numéro du fichier de sortie
     output_file_list = []                   # Liste des fichiers de kmers à merge
     merged_file_number = 0                  # Numéro du fichier mergé
     merged_file_list_for_final_merge = []   # Liste des fichiers pour le merge final
     prefix_size = 5                         # A modifier plus tard par une fonction qui trouvera la taille idéale du préfixe.
+    totalKmers = 0
     
+
     # Lecture du fichier fasta
     seq = []
     with open(fastaFile) as handle :
@@ -304,10 +332,12 @@ def main():
     print(f"Nombre de lignes dans le fichier VCF : {vcfLineCount}")
 
     # Parcours du fichier vcf
+    print("Creating {kmerSize}-mers dict...")
     lineCount = 0
+    pbar = tqdm(total = vcfLineCount)
     with open(vcfFile, "r") as vcf:
             for line in vcf:
-                if lineCount < 5 :
+                if lineCount < vcfLineCount :
                     # 3.1 Récupération des informations
                     chrom, snp_ref, snp_pos, rs_id, snp_alt, vc = getVcfLineInfo(line)
 
@@ -316,32 +346,93 @@ def main():
                     for umer in umerList:
                         kmerList = kmerObjGen(kmerSize, umer, rs_id, chrom, snp_ref, snp_pos)
                     lineCount += 1
+                    pbar.update(1)
 
-                    kmerList.sort(key=lambda x:x.sequence)
-
-                    for k in kmerList:
-                        if k.sequence in kmersObj 0
-                            print("bla")
-                        else :
-                            kmersObj.append(k)
-                
+                    totalKmers += len(kmerList)
+                    # Pas forcément nécessaire de trier à cette étape
+                    #kmerList.sort(key=lambda x:x[0])
+                    for kmer in kmerList:
+                        # kmer[0] : séquence ; kmer[1] : variants
+                        # si la clé existe, on ajoute le variant
+                        try :
+                            kmers[kmer[0]].append(kmer[1])
+                        # sinon, on ajoute la clé avec son variant
+                        except KeyError:
+                            kmers[kmer[0]] = [kmer[1]]                
 
                 else:
                     break
+    pbar.close()
+    print(f"\t{len(kmers)} keys added to the dictionnary")
+    """print(len(kmersObj))
+    kmersObj.sort(key=lambda x: x.sequence)"""
+
+    kmersInDict = len(kmers)
+    # Test pour virer les kmers génomiques
+    genomicKmers = {}
+    n_kmers = len(seq) - kmerSize + 1
+    print(f"Number of k-mers to analyse : {n_kmers}")
+    print(f"Creating genomic {kmerSize}-mers...")
+    pbar2 = tqdm(total=n_kmers)
+    for i in range(n_kmers):
+        pbar2.update(1)
+        gKmer = seq[i:i+kmerSize]
+        genomicKmers[gKmer] = ""
+    pbar2.close()
+    print(f"\t{len(genomicKmers)} unique genomic {kmerSize}-mers created")
+
+    print(f"Looking for genomic {kmerSize}-mers in SNP {kmerSize}-mers")
+    pbar3 = tqdm(total=len(genomicKmers))
+    for k in genomicKmers:
+        pbar3.update()
+        if k in kmers:
+            in_genome = True
+            kmers[k].append(in_genome)
+    pbar3.close()    
+        
+    """for k, v in kmers.items():
+        print(f"{k}\t{v}")"""
+
+    # PURGE
+    # Détecter les k-mers répétés
+    # (On ne peut pas modifier un dictionnaire pendant sa lecture itérative)
+    dupCount = 0
+    dupList = []
+    genKmersCount = 0 # nombre de kmers du génome qu'on retrouve
+    for k, v in kmers.items():
+        if len(v) > 1:
+            dupCount += 1
+            if v[-1] == True :
+                genKmersCount +=1
+            dupList.append(str(k))
+
+    print(f"Purge du dictionnaire")
+    pbar4 = tqdm(total=len(dupList))
+    for k in dupList :
+        if k in kmers:
+            pbar4.update(1)
+            dupKmers[k] = kmers.pop(k)
+    pbar4.close()
+
+    print("Sorting dict...")
+    kmers = OrderedDict(sorted(kmers.items()))
+    print("\tDone.")
+
+    # Afficher le dictionnaires des kmers triés:
+    """for k, v in kmers.items():
+        print(f"{k}\t{v[0].variantProperties}")"""
+
+    print(f"Total de k-mers générés : {totalKmers}")
+    print(f"Nombre de kmers différents dans le dictionnaire : {kmersInDict}")
+    print(f"Nombre de k-mers répétés : {dupCount}/{kmersInDict}")
+    print(f"Nombres de k-mers dans le génome : {genKmersCount}")
+    print(f"Nombre de kmers conservés : {len(kmers)}")
     
-    print(len(kmersObj))
-    kmersObj.sort(key=lambda x: x.sequence)
+    # Afficher le dico des kmers dupliqués
+    #pprint(dupKmers)
 
-    for k in kmersObj:
-        print(k.sequence)
-
+    # A FAIRE : Écrire les dico dans un fichier tsv ou vcf ou json
+    # Tester sur le chromosome 1 pour voir si ça passe en mémoire
 
 if __name__ == '__main__':
     main()
-    """print("le chat")
-    # test pour voir si l'import des classes fonctionne
-    var1 = Variant("rs1", "X", "T", 1, 1, 0, 0)
-    print(var1.rsid)
-    k1 = Kmer("ATCG")
-    k1.addVariant(var1)
-    k1.show_kmer()"""
