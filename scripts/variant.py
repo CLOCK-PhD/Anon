@@ -3,6 +3,17 @@
 class Variant :
 
     def __init__(self, rsid:str, chr:str, snp:str, snpPos:int, relPos:int, kmersCount:int, ambiguousKmersCount:int) -> None:
+        """Générateur de l'objet Variant.
+
+        Parameters :
+            rsid                (str):  Identifiant du SNP
+            chr                 (str):  Chromosome où se situe le SNP
+            snp                 (str):  Variation du SNP
+            snpPos              (int):  Position du SNP sur le chromosome
+            relPos              (int):  Position relative du k-mer sur le chromosome
+            kmersCount          (int):  Nombre de k-mers créés à partir du SNP
+            ambiguousKmersCount (int):  Aucun souvenir
+        """
         self._rsid = rsid
         self._chr = chr
         self._snp = snp
@@ -10,15 +21,6 @@ class Variant :
         self._relPos = relPos
         self._kmersCount = kmersCount
         self._ambiguousKmersCount = ambiguousKmersCount
-
-    """def __init__(self) -> None:
-        self._rsid = "rs0"
-        self._chr = "Z"
-        self._snp = "N"
-        self._snpPos = 0
-        self._relPos = 0
-        self._kmersCount = 0
-        self._ambiguousKmersCount = 0"""
 
     # Getters / Setters
     @property
