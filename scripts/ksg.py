@@ -23,8 +23,9 @@ DÉFINITIONS :
 """
 
 # A FAIRE : gestions des arguments
-# sortir les k-mers in_gen
-
+# A FAIRE : sortir les k-mers in_gen
+# A FAIRE : Voir pour cette histoire de position relative du k-mer
+# A FAIRE : Générer tous les k-mers du génome et pas seulement le chromosome
 # objectif : le pouvoir de discrimination des k-mers
 
 # IMPORTANT : Rédiger les objectifs avant de coder.
@@ -298,7 +299,8 @@ def kmerGenerator(kmerSize:int, umerToCut:str) -> list:
     #pprint(f"kmerList : \n{kmerList}")
     return kmerList
 
-def kmerObjGen(kmerSize:int, umerToCut:str, rsid:str, chrom:str, snp:str, snpPos:int):
+# Découper le u-mer en k-mers, version Objet
+def kmerObjGen(kmerSize:int, umerToCut:str, rsid:str, chrom:str, snp:str, snpPos:int) -> list:
     """Génère les k-mers de taille voulue au format objet, à partir des u-mers.
     Retourne une liste contenant tous les k-mers.
 
@@ -333,7 +335,7 @@ def kmerObjGen(kmerSize:int, umerToCut:str, rsid:str, chrom:str, snp:str, snpPos
     return kmerList
 
 # Création de l'index des suffixes des k-mers
-def createIndexFromDict(d:dict, prefixSize:int, outputDir:str):
+def createIndexFromDict(d:dict, prefixSize:int, outputDir:str) -> None:
     """Génère l'index des k-mers n'ayant qu'un seul variant et qui ne sont pas retrouvés dans le génome.
 
     Parameters :
@@ -470,7 +472,7 @@ def main():
     inGenomeCount = 0
     n_kmers = len(seq) - kmerSize + 1
     print(f"Number of k-mers to analyse : {n_kmers}")
-    print(f"Looking for genmics {kmerSize}-mers in the dictionnary...")
+    print(f"Looking for genomics {kmerSize}-mers in the dictionnary...")
     pbar2 = tqdm(total=n_kmers)
     for i in range(n_kmers):
         pbar2.update(1)
@@ -509,6 +511,15 @@ def main():
     # Afficher le dictionnaires des kmers triés:
     """for k, v in kmers.items():
         print(f"{k}\t{v[0].variantProperties}")"""
+    
+    # Afficher le dictionnaire des dup :
+    for k, v in dupKmers.items():
+        print(f"{k}")
+        for e in v:
+            try :
+                print(f"\t{e.variantProperties}")
+            except AttributeError :
+                print(f"\t{e}")
 
     print(f"Total de k-mers générés : {totalKmers}")
     print(f"Nombre de kmers différents dans le dictionnaire : {kmersInDict}")
