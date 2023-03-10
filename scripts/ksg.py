@@ -45,6 +45,7 @@ Notes :
         Dans le cas contraire, on crée la clé avec son "variant".
     - Vérifier l'histoire du SNP dans le variant :
         je crois que je mets l'original et pas le variant
+        la position du kmer et la position du snp dans le génome semblent ne pas correspondre
 """
 
 # 
