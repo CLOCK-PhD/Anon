@@ -5,8 +5,6 @@ ksg.py : K-mer SNP Generator
 
 Version orientée objet de kmer_snp_gen_index.py
 
-On copie plein de trucs de l'ancien fichier et on voit comment ça se passe ici.
-
 DÉFINITIONS :
 
     K-MERS :
@@ -26,9 +24,9 @@ DÉFINITIONS :
 # A FAIRE : sortir les k-mers in_gen
 # A FAIRE : Voir pour cette histoire de position relative du k-mer
 # A FAIRE : Générer tous les k-mers du génome et pas seulement le chromosome
-# objectif : le pouvoir de discrimination des k-mers
 
 # IMPORTANT : Rédiger les objectifs avant de coder.
+#   objectif : le pouvoir de discrimination des k-mers
 
 # IMPORTANT: Penser à faire des readme sur les données utilisées
 
