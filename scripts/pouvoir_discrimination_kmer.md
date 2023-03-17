@@ -3,6 +3,7 @@
 ébauche
 - ajouter plus de détails et les sources
 - refaire en latex quand ce sera plus complet
+- justifier le choix de la taille des k-mers (meilleur équilibre entre information et taille des données; 31 efficace pour raisons informatiques)
 
 ## Objectif
 
@@ -76,6 +77,7 @@ Les SNP répertoriés dans dbSNP proviennent de nombreuses sources différentes 
 Il est donc nécessaire d'effectuer un tri sur toutes les données disponibles pour se concentrer sur les SNP qui présentent un risque pour l'anonymat.
 
 Pour cela, nous avons décidé dans un premier temps de nous concentrer sur les seuls SNV (Single Nucleotide Variations) et qui ont été identifiés grâce au projet 1000 génomes (qu'on peut distinguer par la présence du terme "COMMON" dans le fichier vcf).
+Un SNP 
 Ces derniers contiennent une fréquence observée dans la population, et consitute une source fiable. D'autres sources de SNP pourront être ajoutées par la suite.
 
 
