@@ -54,6 +54,7 @@ Notes :
 
 import re
 import os
+import glob
 
 from variant import Variant
 #from kmer import Kmer
@@ -398,10 +399,16 @@ def uniquify(path:str) -> str:
 
 def main():
 
-    fastaFile = "../data/grch38p13/Y.fasta"
-    vcfFile = "../data/snp_latest/Y_common_snv.vcf"
+    fastaFile = "../data/grch38p13/11.fasta"
+    vcfFile = "../data/snp_latest/11_common_snv.vcf"
     kmerSize = 31
     kmers_per_file = 100000
+    
+    
+    # TEST - kmer du génome complet - OK
+    genomeDirectory = "/home/remycosta/phd/Anon/data/grch38p13/"
+    # Récupérer les noms de fichier dans une liste
+    fastaFiles = glob.glob(genomeDirectory + "*.fasta")
 
     # Création des variables
     kmers = {}                              # Dictionnaire contenant les kmers
@@ -428,7 +435,7 @@ def main():
         os.makedirs(outputDirectory)
     
 
-    # Lecture du fichier fasta
+    # Lecture du fichier fasta pour générer les k-mers porteurs de SNP
     seq = []
     with open(fastaFile) as handle :
         for record in SeqIO.parse(handle, "fasta"):
@@ -480,7 +487,10 @@ def main():
     # Marquage des kmers génomiques
     kmersInDict = len(kmers)
     inGenomeCount = 0
-    # Nombre de k-mers possibles à partir de la séquence de référence
+    # DETECTER LES K-MERS PRESENTS DANS LE GENOME
+    print(f"\nDétection des k-mers présents naturellement dans le génome de référence")
+    # AVEC LA SEQUENCE DE REFERENCE DU CHROMOSOME
+    """# Nombre de k-mers possibles à partir de la séquence de référence
     n_kmers = len(seq) - kmerSize + 1
     print(f"Number of k-mers to analyse : {n_kmers}")
     print(f"Looking for genomics {kmerSize}-mers in the dictionnary...")
@@ -493,7 +503,39 @@ def main():
             if kmers[gKmer][-1] != True :
                 kmers[gKmer].append(in_genome)
                 inGenomeCount += 1
-    pbar2.close()
+    pbar2.close()"""
+    
+    # TEST : AVEC LE GENOME COMPLET - C'est lent mais ça marche
+    fastaFileNumber = 1
+    for f in fastaFiles :
+        #print(f)
+        seq = []
+        with open(f) as handle :
+            print()
+            res = re.search("^.*/(.*).fasta$", f)
+            if res :
+                chrom_name = res.group(1)
+            print(f"Now reading chromsome {chrom_name} fasta file ({fastaFileNumber}/{len(fastaFile)})")
+
+            for record in SeqIO.parse(handle, "fasta"):
+                seq = str(record.seq.upper())
+                n_kmers = len(seq) - kmerSize + 1
+                print(f"\tSequence length : {len(seq)}")
+                print(f"\tNumber of k-mers : {n_kmers}")
+                print(f"\tLooking for genomics {kmerSize}-mers in the dictionnary...")
+                
+                pbar2 = tqdm(total=n_kmers)
+                for i in range(n_kmers):
+                    pbar2.update(1)
+                    gKmer = seq[i:i+kmerSize]
+                    if "N" not in gKmer and gKmer in kmers:
+                        in_genome = True
+                        if kmers[gKmer][-1] != True :
+                            kmers[gKmer].append(in_genome)
+                            inGenomeCount += 1
+                pbar2.close()
+                fastaFileNumber += 1
+
 
 
     # PURGE
