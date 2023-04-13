@@ -20,6 +20,8 @@ DÉFINITIONS :
 
 """
 
+# EN COURS : Module de création du dictionnaire des k-mers du génome entier
+
 # A FAIRE : gestions des arguments
 # A FAIRE : sortir les k-mers in_gen
 # A FAIRE : Voir pour cette histoire de position relative du k-mer
