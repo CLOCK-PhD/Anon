@@ -25,7 +25,10 @@ DÉFINITIONS :
 # A FAIRE : gestions des arguments
 # A FAIRE : sortir les k-mers in_gen
 # A FAIRE : Voir pour cette histoire de position relative du k-mer
-# A FAIRE : Générer tous les k-mers du génome et pas seulement le chromosome
+# OK : Générer tous les k-mers du génome et pas seulement le chromosome
+# A FAIRE : Modifier le nom de fastaFiles pour éviter la confusion avec fastaFile
+#           fastaFiles : tous les fasta du génome
+#           fastaFile : séquence de référence pour la création des k-mers porteurs de SNP
 
 # IMPORTANT : Rédiger les objectifs avant de coder.
 #   objectif : le pouvoir de discrimination des k-mers
@@ -399,8 +402,8 @@ def uniquify(path:str) -> str:
 
 def main():
 
-    fastaFile = "../data/grch38p13/11.fasta"
-    vcfFile = "../data/snp_latest/11_common_snv.vcf"
+    fastaFile = "../data/grch38p13/5.fasta"
+    vcfFile = "../data/snp_latest/5_common_snv.vcf"
     kmerSize = 31
     kmers_per_file = 100000
     
@@ -409,6 +412,8 @@ def main():
     genomeDirectory = "/home/remycosta/phd/Anon/data/grch38p13/"
     # Récupérer les noms de fichier dans une liste
     fastaFiles = glob.glob(genomeDirectory + "*.fasta")
+    print(f"Nombre de fichiers fasta : {len(fastaFiles)}")
+    pprint(fastaFiles)
 
     # Création des variables
     kmers = {}                              # Dictionnaire contenant les kmers
@@ -433,7 +438,7 @@ def main():
     except FileExistsError:
         outputDirectory = uniquify(outputDirectory)
         os.makedirs(outputDirectory)
-    
+    print(f"Dossier {outputDirectory} créé.")
 
     # Lecture du fichier fasta pour générer les k-mers porteurs de SNP
     seq = []
@@ -515,7 +520,7 @@ def main():
             res = re.search("^.*/(.*).fasta$", f)
             if res :
                 chrom_name = res.group(1)
-            print(f"Now reading chromsome {chrom_name} fasta file ({fastaFileNumber}/{len(fastaFile)})")
+            print(f"Now reading chromsome {chrom_name} fasta file ({fastaFileNumber}/{len(fastaFiles)})")
 
             for record in SeqIO.parse(handle, "fasta"):
                 seq = str(record.seq.upper())
@@ -535,8 +540,6 @@ def main():
                             inGenomeCount += 1
                 pbar2.close()
                 fastaFileNumber += 1
-
-
 
     # PURGE
     # Détecter les k-mers répétés
