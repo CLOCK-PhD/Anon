@@ -127,4 +127,6 @@ if __name__ == '__main__':
 
     variant.variantProperties
 
+    print("LES CHATS")
+
     
