@@ -32,6 +32,8 @@ DÉFINITIONS :
 
 # IMPORTANT: Penser à faire des readme sur les données utilisées
 
+# test
+
 # 
 
 """
@@ -61,6 +63,7 @@ from pprint import pprint
 from Bio import SeqIO
 from typing import OrderedDict
 from tqdm import tqdm
+from sys import getsizeof
 
 # Récupérer les informations contenues dans le VCF
 def getVcfLineInfo(line)-> tuple:
@@ -408,9 +411,15 @@ def main():
     output_file_list = []                   # Liste des fichiers de kmers à merge
     merged_file_number = 0                  # Numéro du fichier mergé
     merged_file_list_for_final_merge = []   # Liste des fichiers pour le merge final
-    prefixSize = 5                          # A modifier plus tard par une fonction qui trouvera la taille idéale du préfixe.
+    prefixSize = 5                          # Taille du préfixe de l'index
     totalKmers = 0
+    
+    # Adapter le nom du fichier de sortie au chromosome analysé
     outputDirectory = "../data/ksg_test/kmer_snp_index"
+    res = re.search("^.*/(.*).fasta$", fastaFile)
+    if res :
+        #print(res.group(1))
+        outputDirectory = outputDirectory + "_chr" + res.group(1)
 
     try :
         os.makedirs(outputDirectory)
@@ -471,6 +480,7 @@ def main():
     # Marquage des kmers génomiques
     kmersInDict = len(kmers)
     inGenomeCount = 0
+    # Nombre de k-mers possibles à partir de la séquence de référence
     n_kmers = len(seq) - kmerSize + 1
     print(f"Number of k-mers to analyse : {n_kmers}")
     print(f"Looking for genomics {kmerSize}-mers in the dictionnary...")
@@ -509,24 +519,27 @@ def main():
     kmers = OrderedDict(sorted(kmers.items()))
     print("\tDone.")
 
+    # RESUME : DICTIONNAIRE DES KMERS
     # Afficher le dictionnaires des kmers triés:
     """for k, v in kmers.items():
         print(f"{k}\t{v[0].variantProperties}")"""
     
     # Afficher le dictionnaire des dup :
-    for k, v in dupKmers.items():
+    """for k, v in dupKmers.items():
         print(f"{k}")
         for e in v:
             try :
                 print(f"\t{e.variantProperties}")
             except AttributeError :
-                print(f"\t{e}")
+                print(f"\t{e}")"""
 
     print(f"Total de k-mers générés : {totalKmers}")
     print(f"Nombre de kmers différents dans le dictionnaire : {kmersInDict}")
     print(f"Nombre de k-mers répétés : {dupCount}/{kmersInDict}")
     print(f"Nombres de k-mers dans le génome : {inGenomeCount}")
     print(f"Nombre de kmers conservés : {len(kmers)}")
+    print(f"\tTaille du dictionnaire des k-mers : {getsizeof(kmers)} octets")
+    print(f"\tTaille du dictionnaire des k-mers répétés : {getsizeof(dupKmers)} octets")
 
     # Création de l'index
     createIndexFromDict(kmers, prefixSize, outputDirectory)
