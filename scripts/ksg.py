@@ -402,8 +402,8 @@ def uniquify(path:str) -> str:
 
 def main():
 
-    fastaFile = "../data/grch38p13/5.fasta"
-    vcfFile = "../data/snp_latest/5_common_snv.vcf"
+    fastaFile = "../data/grch38p13/X.fasta"
+    vcfFile = "../data/snp_latest/X_common_snv.vcf"
     kmerSize = 31
     kmers_per_file = 100000
     
@@ -413,7 +413,7 @@ def main():
     # Récupérer les noms de fichier dans une liste
     fastaFiles = glob.glob(genomeDirectory + "*.fasta")
     print(f"Nombre de fichiers fasta : {len(fastaFiles)}")
-    pprint(fastaFiles)
+    #pprint(fastaFiles)
 
     # Création des variables
     kmers = {}                              # Dictionnaire contenant les kmers
@@ -488,6 +488,7 @@ def main():
     print(f"\t{len(kmers)} keys added to the dictionnary")
     """print(len(kmersObj))
     kmersObj.sort(key=lambda x: x.sequence)"""
+
 
     # Marquage des kmers génomiques
     kmersInDict = len(kmers)
