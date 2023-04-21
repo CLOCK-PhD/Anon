@@ -23,24 +23,17 @@ Exemple : réunion des fichiers AAAAA du chromosome 1 et 2 en un seul fichier AA
     . Enjoie
 """
 
-# Premier essai : Approche heap merge qui était efficace lors des tests précédents
-# pour réunir les fichiers.
-
-# A FAIRE : On va retrouver des k-mers identiques dans des chromosomes différents.
-# Il sera nécessaire de les supprimer les deux et de les mettre dans un dictionnaire
-# comme lors de la création des indexes chromosomiques.
-#   Idée : soit à faire au vol, ce qui risque d'être un peu chiant
-#           Soit à faire une fois le merge effectué (hmmmm...)
-
 # A FAIRE : Gestion des arguments une fois les tests réussis
 
-# OK : PREMIERS TESTS : sur les fichiers output des chromosomes Y, 5 et 11
-# A FAIRE :  Créer les fichiers de préfixe de sortie contenant les kmers uniques
-# A FAIRE : Gérer plusieurs préfixes à la suite
+# OK - PREMIERS TESTS : sur les fichiers output des chromosomes Y, 5 et 11
+# OK - A FAIRE :  Créer les fichiers de préfixe de sortie contenant les kmers uniques
+# OK - A FAIRE : Gérer plusieurs préfixes à la suite
 
+
+# !! EN COURS !! - A FAIRE : chemin absolu pour les dossiers et fichiers
 
 import os
-import glob
+from glob import glob
 import heapq
 import argparse
 import sys
@@ -91,13 +84,13 @@ def main():
     print(f"Nombre de prédixes créés : {len(prefList)}")
 
     # 2. Création du dossier de sortie contenant l'index final - OK
-    """outputDirectory = "../data/ksg_test/index_full_genome"
+    outputDirectory = "../data/index_full_genome"
     try :
         os.makedirs(outputDirectory)
     except FileExistsError:
         outputDirectory = uniquify(outputDirectory)
         os.makedirs(outputDirectory)
-    print(f"Dossier {outputDirectory} créé.")"""
+    print(f"Dossier {outputDirectory} créé.")
 
 
     # 3. Ouverture des fichiers préfixes homonymes
@@ -107,7 +100,19 @@ def main():
     #pprint(indexFileNames)
     my_files = []
 
-    # TEST EN COURS : Récupérer tous les noms des dossiers des indexes de chromosomes
+    # TEST : Récupérer tous les noms des dossiers des indexes de chromosomes
+
+    # Liste contenant tous les noms de dossiers d'indexes
+    indexDirList = glob(inputDir + "*/")
+    #pprint(indexDirList)
+
+    # OK - test pour créer les fichiers de l'index
+    """for p in prefList:
+        for f in indexDirList :
+            #print(f + p)
+            # créer le fichier :
+            prefFile = f + p
+            open(prefFile, "a").close()"""
 
 
     # OK - TEST : Ouvrir tous les préfixes à la suite pour faire les opérations
@@ -116,7 +121,7 @@ def main():
         indexDict = {}  # Dictionnaire de tous les fichiers réunis
         dupDict = {}    # Dictionnaire sans doublon
         les_fichiers = []
-        for f in indexFileNames :
+        for f in indexDirList :
             les_fichiers.append(f + p)
     
         #pprint(les_fichiers)
@@ -126,7 +131,7 @@ def main():
 
         for f in les_fichiers :
             with open(f, "r") as le_index:
-                print(f"Reading file {f}")
+                #print(f"Reading file {f}")
                 # test en virant le range()
                 #for n in range(1000):
                 for l in le_index:
@@ -167,6 +172,19 @@ def main():
         # Afficher le dictionnaire index final
         print(f"\tDictionnaire final : {len(indexDict)}")
         #pprint(indexDict)
+
+        # TEST EN COURS : Écriture dans le fichier - Corriger l'écriture
+        with open(f"{outputDirectory}/{p}", "a") as f:
+            for suff, var in indexDict.items() :
+                the_var = "\t".join(var[0])
+                line = f"{suff}\t{the_var}\n"
+                #line = f"{suff}\t{var}\n"
+                f.write(line)
+        
+        """for suff, var in indexDict.items() :
+                the_var = "\t".join(var[0])
+                line = f"{suff}\t{the_var}\n"
+                print(line)"""
 
 
 
