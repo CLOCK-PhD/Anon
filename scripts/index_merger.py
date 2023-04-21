@@ -24,6 +24,16 @@ Exemple : réunion des fichiers AAAAA du chromosome 1 et 2 en un seul fichier AA
     7. Enjoie
 """
 
+
+
+
+####################################################################
+# URGENT : TRIER LES DICTIONNAIRES AVANT ECRITURE DES FICHIERS !!! #
+####################################################################
+
+
+
+
 # A FAIRE : Gestion des arguments une fois les tests réussis
 
 import os
