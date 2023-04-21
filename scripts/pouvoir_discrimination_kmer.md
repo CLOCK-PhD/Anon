@@ -9,7 +9,7 @@
 
 On souhaite utiliser les k-mers comme des outils d'évaluation de risque du partage des données brutes de séquençages humains.
 
-Les k-mers peuvent être porteurs, ou non, de marqueurs biologiques, notamment les SNP, qui permettent de réidentifier une personne.
+Les k-mers peuvent être porteurs de marqueurs biologiques, notamment les SNP, qui permettent de réidentifier une personne.
 
 Ici, nous développons une approche basée sur les k-mers porteurs de SNP, et donc porteurs d'un biomarqueur, qui une fois détectés sur les *reads* issu des données brutes de séquençage de patient, nous permettraient d'estimer le risque associé au partage d'un tel *read*.
 
@@ -45,7 +45,7 @@ Ceci aura pour but de mieux identifier les risques et ainsi de permettre une dé
 
 Nous proposons ici une approche basée sur les k-mers pour estimer ce risque de partage des données brutes issues du séquançage humain
 
-[plus de détail sur les k-mers et où ils sont utilisés]
+[plus de détail sur les k-mers]
 
 Les k-mers que nous utiliseront dans notre approche seront porteurs de marqueurs et permettront d'identifier les *reads* suceptibles de présenter un risque lors du partage des données.
 
@@ -76,8 +76,7 @@ Les SNP répertoriés dans dbSNP proviennent de nombreuses sources différentes 
 
 Il est donc nécessaire d'effectuer un tri sur toutes les données disponibles pour se concentrer sur les SNP qui présentent un risque pour l'anonymat.
 
-Pour cela, nous avons décidé dans un premier temps de nous concentrer sur les seuls SNV (Single Nucleotide Variations) et qui ont été identifiés grâce au projet 1000 génomes (qu'on peut distinguer par la présence du terme "COMMON" dans le fichier vcf).
-Un SNP 
+Pour cela, nous avons décidé dans un premier temps de nous concentrer sur les seuls SNV (Single Nucleotide Variations),  et qui ont été identifiés grâce au projet 1000 génomes (qu'on peut distinguer par la présence du terme "COMMON" dans le fichier vcf).
 Ces derniers contiennent une fréquence observée dans la population, et consitute une source fiable. D'autres sources de SNP pourront être ajoutées par la suite.
 
 
