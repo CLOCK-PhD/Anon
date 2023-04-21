@@ -72,8 +72,9 @@ def uniquify(path:str) -> str:
 
 def main():
 
-    indexDict = {}  # Dictionnaire de tous les fichiers réunis
-    dupDict = {}    # Dictionnaire sans doublon
+    # On le déplace parce qu'il faut en faire un par préfixe
+    #indexDict = {}  # Dictionnaire de tous les fichiers réunis
+    #dupDict = {}    # Dictionnaire sans doublon
     prefixSize = 5
     inputDir = "../data/ksg_test/"  # Dossier contenant les indexes pour chaque chromosome
     input_dir_Y = "../data/ksg_test/kmer_snp_index_chrY/"
@@ -106,15 +107,82 @@ def main():
     #pprint(indexFileNames)
     my_files = []
 
-    # Ajouter le nom d'un préfixe aux dossiers pour ouvrir les bons fichiers
-    for f in indexFileNames :
-        my_files.append(f + "AAAAA")
+    # TEST EN COURS : Récupérer tous les noms des dossiers des indexes de chromosomes
+
+
+    # OK - TEST : Ouvrir tous les préfixes à la suite pour faire les opérations
+    for p in prefList :
+        print(f"\nPréfixe en cours : {p}")
+        indexDict = {}  # Dictionnaire de tous les fichiers réunis
+        dupDict = {}    # Dictionnaire sans doublon
+        les_fichiers = []
+        for f in indexFileNames :
+            les_fichiers.append(f + p)
     
+        #pprint(les_fichiers)
+        
+        # Liste avec tous les noms de fichiers d'indexe homonymes pour tous les chrom
+        # La suite des opérations se passe donc ici
+
+        for f in les_fichiers :
+            with open(f, "r") as le_index:
+                print(f"Reading file {f}")
+                # test en virant le range()
+                #for n in range(1000):
+                for l in le_index:
+                    line = le_index.readline().strip("\n").split("\t")
+                    # line[0] = suffixe; line[1:] : tout le reste des infos
+                    #print(line[0])
+                    #print(f"\t{line[1:]}")
+
+                    # Remplir le dictionnaire - premier test
+                    try :
+                        indexDict[line[0]].append(line[1:])
+                    except KeyError :
+                        indexDict[line[0]] = [line[1:]]
+
+        # Afficher le dictionnaire crée
+        print(f"\tDictionnaire initial : {len(indexDict)}")
+        #pprint(indexDict)
+
+        # Parcours du dictionnaire pour liste les éléments à supprimer :
+        kmerToDel = []
+        for suffix, val in indexDict.items() :
+            # un k-mer est unique ssi il n'a qu'un variant dans sa liste
+            # donc la liste de ses valeur ne contient qu'un élément (qui est une liste)
+            if len(val) > 1 :
+                #print(f"{suffix}\n\t{val}")
+                kmerToDel.append(suffix)
+
+        # Afficher les k-mers à supprimer
+        #pprint(kmerToDel)
+
+        # Déplacer les k-mers à supprimer dans l'autre dictionnaire
+        for suffix in kmerToDel:
+            dupDict[suffix] = indexDict.pop(suffix)
+            
+        # Afficher le dictionnaire des dups
+        print(f"\tDictionnaire des dups : {len(dupDict)}")
+        #pprint(dupDict)
+        # Afficher le dictionnaire index final
+        print(f"\tDictionnaire final : {len(indexDict)}")
+        #pprint(indexDict)
+
+
+
+
+
+    # Premiers tests - ici ça marche pour juste un nom de fichier donné
+    # Ajouter le nom d'un préfixe aux dossiers pour ouvrir les bons fichiers
+    """for f in indexFileNames :
+        my_files.append(f + "AAAAA")"""
+    
+    # 4. 
     ### TEST : Plus simple, méthode d'origine avec un dictionnaire
 
     #pprint(my_files)   # Afficher tous les noms de fichiers créés
 
-    for f in my_files :
+    """for f in my_files :
         with open(f, "r") as le_index :
             print(f"Reading file {f}")
             for n in range(5):
@@ -127,36 +195,28 @@ def main():
                 try :
                     indexDict[line[0]].append(line[1:])
                 except KeyError :
-                    indexDict[line[0]] = [line[1:]]
+                    indexDict[line[0]] = [line[1:]]"""
 
     # Afficher le dictionnaire crée
-    print("\nDictionnaire initial :")
+    """print("\nDictionnaire initial :")
     #pprint(indexDict)
-    print(len(indexDict))
-
+    print(len(indexDict))"""
+    
     # Parcours du dictionnaire pour liste les éléments à supprimer :
-    kmerToDel = []
+    """kmerToDel = []
     for suffix, val in indexDict.items() :
         # un k-mer est unique ssi il n'a qu'un variant dans sa liste
         if len(val) > 1 :
             #print(f"{suffix}\n\t{val}")
-            kmerToDel.append(suffix)
+            kmerToDel.append(suffix)"""
 
     # Afficher les k-mers à supprimer
     #pprint(kmerToDel)
 
     # Déplacer les k-mers à supprimer dans l'autre dictionnaire
-    for suffix in kmerToDel:
-        dupDict[suffix] = indexDict.pop(suffix)
+    """for suffix in kmerToDel:
+        dupDict[suffix] = indexDict.pop(suffix)"""
     
-    # Afficher le dictionnaire des dups
-    print("\nDictionnaire des dups :")
-    #pprint(dupDict)
-    print(len(dupDict))
-    # Afficher le dictionnaire index final
-    print("\nDictionnaire final :")
-    #pprint(indexDict)
-    print(len(indexDict))
 
 if __name__ == '__main__':
     main()
