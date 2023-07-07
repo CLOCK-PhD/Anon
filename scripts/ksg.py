@@ -511,7 +511,7 @@ def main():
                 inGenomeCount += 1
     pbar2.close()"""
     
-    # TEST : AVEC LE GENOME COMPLET - C'est lent mais ça marche
+    # AVEC LE GENOME COMPLET - C'est lent mais ça marche
     fastaFileNumber = 1
     for f in fastaFiles :
         #print(f)

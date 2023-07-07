@@ -15,8 +15,9 @@ enum FileReadState {
 
 int main(){
     // Open the fastq file
-    ifstream file("../data/raw_seq_data/ERR020236_1.fastq");
-    string filename = "../data/raw_seq_data/ERR020236_1.fastq";
+    //ifstream file("../data/raw_seq_data/ERR020236_1.fastq");
+    ifstream file("fq");
+    string filename = "fq";
 
     // Check if the file was successfully opened
     if (!file) {
@@ -25,89 +26,6 @@ int main(){
     } else {
         cout << "Fichier -" << filename << "- ouvert avec succès." << endl;
     }
-
-
-
-   // TEST 2
-   /*char ch;
-
-   bool inLineStartingWithAt = false;
-   bool inSeq = false;
-   bool inPlus = false;
-   bool inQual = false;
-   bool inHeader = false;
-
-   int c; // colonne pour la séquence
-   int l; // line pour la séquence
-   int seqLen;
-
-   std::string readName;
-   std::string seq;
-   std::string next_kmer;
-
-   int clock = 0;
-
-   do {
-    clock += 1;
-    while (file.get(ch)){
-        // vérifier si la ligne commence par un @
-        if (ch == '@'){
-            inHeader = true;
-        }
-
-        // HEADER
-        // Enregistrer le nom du read en cours si la ligne commence par @
-        if (inHeader){
-            readName += ch;
-            // quand on arrive à la fin de la ligne qui commence par @ : fin du header, début de la séquence
-            if (ch == '\n'){
-                inHeader = false;
-                inSeq = true;
-                cout << readName << endl;
-                cout << "On sort du header, on va dans la séquence" << endl;
-                readName = "";
-            }
-        }
-        
-
-        // SEQUENCE
-        if (inSeq){
-            if (ch == '+'){
-                inSeq = false;
-                inPlus = true;
-                cout << "On sort de la séquence, on passe dans le truc chiant" << endl;
-                cout << seq << endl;
-                seq = "";
-            }
-            seqLen += 1;
-            if (ch != '+' && !isspace(ch)){
-                seq += ch ;
-            }
-        }
-
-        // LIGNE + FIN DE SEQ/DEBUT QUAL
-        if (inPlus){
-            if (ch == '\n'){
-                inPlus = false;
-                inQual = true;
-            }
-        }
-
-        if (inQual){
-            seqLen -= 1;
-            if(seqLen == 0){
-                inQual = false;
-                if(ch == '\n'){
-                    if(ch == '@'){
-                        inHeader = true;
-                    }
-                }
-            }
-
-        }
-    }
-    cout << "CLOOOOOOCK : " << clock << endl;
-   } while (clock < 100);*/
 
     // TEST 3
 
@@ -125,8 +43,8 @@ int main(){
     size_t beg = 0; // beginning
     size_t seqSize = 0; // Taille de la séquence
     size_t qual_size = 0;   // taille de la séquence qualité
-    size_t i = 0;   // i
-    size_t charNb = 0;  // nombre de caractères dans le buffer ?
+    size_t i = 0;   // Notre itérateur préféré
+    size_t charNb = 0;  // nombre de caractères dans le buffer
     size_t num_ligne = 1; // Numéro de la ligne ; pour le message d'erreur
     char buffer[1024];
     FileReadState state = IN_HEADER;
@@ -210,7 +128,7 @@ int main(){
                     break;
                 }
                 case IN_TRANSITION:{
-                    //cout << header << endl;
+                    cout << header << endl;
                     //cout << seq << endl;
 
                     // OPERATIONS SUR LE READ
@@ -220,7 +138,7 @@ int main(){
                         //cout << kmer << endl;
                         string prefix = seq.substr(i, prefixSize);
                         string suffix = seq.substr(i + prefixSize, suffixSize);
-                        //cout << prefix << " - " << suffix << endl;
+                        cout << prefix << " - " << suffix << endl;
                     }
                     
                     // FIN OPERATIONS SUR LE READ

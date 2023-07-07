@@ -139,7 +139,7 @@ def main():
         fig, ax = plt.subplots()
         ax.bar(x, y, log = True, ec="k", color="red")
         ax.set_title(f"Chromosome {chrom}")
-        ax.set_xlabel(f"Nombre de variations par {kmerSize}-mer")
+        ax.set_xlabel(f"Nombre de variations supplémentaires par {kmerSize}-mer")
         ax.set_ylabel("Nombre de cas")
         plt.title(f"Chromosome {chrom}")
     # Sauvegarde de l'image

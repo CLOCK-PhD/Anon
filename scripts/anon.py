@@ -19,7 +19,7 @@ Objectifs :
 # OK : Découper la séquence fastq en k-mers
 # OK : A FAIRE : rechercher les fastq dans l'index
 #       On va essayer deux méthodes :
-#       - Charger TOUS les fichiers en mémoire pour la recherche (main_fuckMyRAM())
+#       - Charger TOUS les fichiers en mémoire pour la recherche (main3())
 #       - Ouvrir les fichiers à la demande (main())
 # A FAIRE : Compter les occurences
 # A FAIRE : Créer un output comme dans le mail d'Alban
@@ -31,15 +31,43 @@ import sys
 import glob
 import os
 import pandas as pd
+import json
+import bisect
 
 from Bio import SeqIO
 from pprint import pprint
 from sys import getsizeof
 from tqdm import tqdm
 
-# TEST AVEC DICO DE DICO POUR OUVRIR CHAQUE FICHIER DINDEXE UNE FOIS - TROP DE RAM
+
+def dicho(wordList, word):
+
+    # Test pour adapter à mon input pourri
+
+    if len(wordList) == 0:
+        return False
+    
+    i = len(wordList) // 2
+    if wordList[i].split("\t")[0] == word:
+        #return True
+        return wordList[i].split("\t")[1]
+    
+    if wordList[i].split("\t")[0] > word:
+        # recherche dans la première moitié
+        return dicho(wordList[:i], word)
+    else :
+        # recherche dans la seconde moité
+        return dicho(wordList[i+1:], word)
+    
+def dicho2(wordList, word):
+    i = bisect.bisect_left(wordList, word)
+    if i == len(wordList):
+        return False
+    return wordList[i] == word
+
+"""# TEST AVEC DICO DE DICO POUR OUVRIR CHAQUE FICHIER DINDEXE UNE FOIS - TROP DE RAM
 # A voir si on fait pas une découpe tous les 100k reads pour ensuite faire une recherche,
-# remplir le dico des résultats, et boucler là dessus jusqu'à la fin
+# remplir le dico des résultats, et boucler là dessus jusqu'à la fin"""
 def main2():
     
     fastqFile = "../data/raw_seq_data/ERR020236_1.fastq"    # Fichier fastq
@@ -242,7 +270,7 @@ def main():
                     print(line)"""
 
 
-def main_fuckMyRAM():
+def main3():
     
     # A FAIRE : tqdm
 
@@ -282,11 +310,20 @@ def main_fuckMyRAM():
     # ligne 0 : suffixe, 1:rsid, 2:?, 3: SNP, 4:snppos, 5:kmerpos, 6 et 7 osef
 
     # En vrai ce serait mieux avec pandas hein...
-    #print(inMemoryFilesDict["TCACT"])
     # ----------------------------------------------
     # Lire le fichier fastq
-    searchCount = 0 # Pour les tests
+
+    # Comptage de lignes
+    print("Comptage du nombre de reads...")
+    with open(fastqFile, "rb") as f:
+        num_lines = int(sum(1 for _ in f)/4)
+
+    print(f"Il y a {num_lines} reads dans le fichier fastq")
+
+    #searchCount = 0 # Pour les tests
+    pbar2 = tqdm(total=num_lines)
     for record in SeqIO.parse(fastqFile, 'fastq'):
+        pbar2.update(1)
         seq = str(record.seq.upper())
         readId = record.id
     
@@ -295,9 +332,9 @@ def main_fuckMyRAM():
             #print("Il y a un N dans la séqunce")
             continue
         
-        searchCount += 1 # Pour les tests
-        print(f"{searchCount} - {readId}")
-        print(seq)
+        #searchCount += 1 # Pour les tests
+        #print(f"{searchCount} - {readId}")
+        #print(seq)
 
         kmerReadDict = {} # Dictionnaire qui contient tous les suffixes du read en cours
 
@@ -311,55 +348,38 @@ def main_fuckMyRAM():
             pref = rKmer[:5]    # Fichier de l'index à ouvrir
             suff = rKmer[5:]    # Suffixe à chercher dans la première colone de l'index
 
-            # Tentative sans passer par un dico
-            for e in inMemoryFilesDict[pref]:
+            # LENTEUR EXTREME - Tentative sans passer par un dico
+            """for e in inMemoryFilesDict[pref]:
                 if suff == e.split("\t")[0] :
-                    print("yay")
+                    #print("yay")
                     try :
                         resultDict[readId].append(e.split("\t")[1])
                     except KeyError :
-                        resultDict[readId] = [e.split("\t")[1]]
-
-
-            """# Remplissage du dictionnaire
-            try :
-                kmerReadDict[pref].append(suff)
-            except KeyError :
-                kmerReadDict[pref] = [suff]
-
-    # --------------------------------------------------
-        #pprint(kmerReadDict)
-
-        # Maintenant, on cherche
-        
-        for pref, suff in kmerReadDict.items():
-            for s in suff :
-                for e in inMemoryFilesDict[pref] :
-                    if s in e.split("\t")[0] :
-                        print("yay !") # ça a l'air de marcher
-                        #print(s + " - " +e.split("\t")[0])
-                        # Marquage dans le dictionnaire des résultats
-                        try :
-                            resultDict[readId].append(e.split("\t")[1])
-                        except KeyError :
-                            resultDict[readId] = [e.split("\t")[1]]"""
+                        resultDict[readId] = [e.split("\t")[1]]"""
             
+            # ESSAI - RECHERCHE DICHOTOMIQUE
+            res = dicho(inMemoryFilesDict[pref], suff)
+            if res :
+                try :
+                    resultDict[readId].append(res)
+                except KeyError :
+                    resultDict[readId] = [res]
 
-
-        if searchCount == 100:break
+        #if searchCount == 100:break
     
     #pprint(resultDict)
 
     # Affichage des résultats :
     
     for read, snps, in resultDict.items() :
-        print(f"Le read {read} contient les SNPs : ")
+        print(f"Le read {read} est associé aux SNPs : ")
         for s in snps :
             print(f"\t{s}")
+    
+    outputFile = "../data/anon.json"
+    with open(outputFile, "w") as of :
+        json.dump(resultDict, of, indent=4)
 
 
 if __name__ == '__main__':
-    main_fuckMyRAM()
-
-
-
+    main3()

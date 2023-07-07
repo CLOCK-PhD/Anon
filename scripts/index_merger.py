@@ -24,16 +24,6 @@ Exemple : réunion des fichiers AAAAA du chromosome 1 et 2 en un seul fichier AA
     7. Enjoie
 """
 
-
-
-
-####################################################################
-# URGENT : TRIER LES DICTIONNAIRES AVANT ECRITURE DES FICHIERS !!! #
-####################################################################
-
-
-
-
 # A FAIRE : Gestion des arguments une fois les tests réussis
 
 import os
@@ -41,6 +31,7 @@ from glob import glob
 
 from itertools import product
 from pprint import pprint
+from typing import OrderedDict
 
 # Générer un nom de dossier unique
 def uniquify(path:str) -> str:
@@ -144,6 +135,9 @@ def main():
         # Afficher le dictionnaire index final
         print(f"\tDictionnaire final : {len(indexDict)}")
         #pprint(indexDict)
+
+        #5b. Tri du dictionnaire
+        indexDict = OrderedDict(sorted(indexDict.items()))
 
         # 6. Écriture du nouvel index dans un dossier
         with open(f"{outputDirectory}/{p}", "a") as f:
