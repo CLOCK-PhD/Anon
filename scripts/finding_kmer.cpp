@@ -59,7 +59,7 @@ std::map<std::string, std::vector<std::string>> loadFilesInDirectory(const std::
 
     int fileCount = 0;
     
-    for (const auto& entry : fs::directory_iterator(directoryPath)) {
+    for (const auto &entry : fs::directory_iterator(directoryPath)) {
         if (entry.is_regular_file()) {
             std::string filePath = entry.path().string();
             std::vector<std::string> lines = loadFileContents(filePath);
@@ -107,8 +107,8 @@ std::string searchFirstWord(const std::vector<std::string>& lines, const std::st
 }
 
 
-// Fonction réalisant la recherche
-void searchWordInFile(const std::map<std::string, std::vector<std::string>> &fileMap, const std::string &key, const std::string &word) {
+// Fonction réalisant la recherche et retournant le rsid
+std::string searchWordInFile(const std::map<std::string, std::vector<std::string>> &fileMap, const std::string &key, const std::string &word) {
     auto it = fileMap.find(key);
     if (it != fileMap.end()) {
         const std::vector<std::string>& lines = it->second;
@@ -118,6 +118,7 @@ void searchWordInFile(const std::map<std::string, std::vector<std::string>> &fil
             //std::cout << "The word '" << word << "' was found in the first position of a line in the file '" << key << "'." << std::endl;
             //std::cout << "The second word in the matching line is: " << secondWord << std::endl;
             //std::cout << key << word << '\t' << secondWord << std::endl;
+            return secondWord;
         }/* else {
             std::cout << "The word '" << word << "' was not found in the first position of a line in the file '" << key << "'." << std::endl;
         }*/
@@ -138,12 +139,16 @@ bool containsCharacter(const std::string &str, char targetChar){
 
 int main(){
 
+    // Récupérer les résultats de la recherche
+    std::map<std::string, std::vector<string>> resultMap;
+
     /////////////////////////////////////////
     //               INDEX                 //
     /////////////////////////////////////////
 
     // Charger tous les fichiers de l'index
-    std::string directoryPath = "indexDirLink"; // Chemin d'accès du dossier
+    //std::string directoryPath = "indexDirLink"; // Chemin d'accès du dossier, version longue
+    std::string directoryPath = "../data/inde_lite_redux";
     std::map<std::string, std::vector<std::string>> fileMap = loadFilesInDirectory(directoryPath);
 
     /////////////////////////////////////////
@@ -245,6 +250,7 @@ int main(){
                 case IN_TRANSITION:{
                     //cout << header << endl;
                     //cout << seq << endl;
+                    std::string rsid;
 
                     ////////////////////////////
                     // OPERATIONS SUR LE READ //
@@ -262,7 +268,8 @@ int main(){
 
                         // Si le suffixe ne contient pas de N, on fait la recherche
                         if (!containsCharacter(suffix, 'N')){
-                            searchWordInFile(fileMap, prefix, suffix);
+                            rsid = searchWordInFile(fileMap, prefix, suffix);
+                            resultMap.emplace(rsid, header);
                         }
                     }
                     ////////////////////////////////
