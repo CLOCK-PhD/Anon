@@ -70,6 +70,7 @@ from tqdm import tqdm
 from sys import getsizeof
 
 # Récupérer les informations contenues dans le VCF
+# On pourrait en faire un objet
 def getVcfLineInfo(line)-> tuple:
     """Récupère les informations contenues dans chaque ligne du fichier VCF de SNPdb.
     Retourne un tuple qui contient dans l'ordre :
@@ -488,7 +489,6 @@ def main():
     print(f"\t{len(kmers)} keys added to the dictionnary")
     """print(len(kmersObj))
     kmersObj.sort(key=lambda x: x.sequence)"""
-
 
     # Marquage des kmers génomiques
     kmersInDict = len(kmers)
