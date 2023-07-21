@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <filesystem>
 
-/* Script de test pour la recherche des k-mers dans l'index
+/* Programme de test pour la recherche des k-mers dans l'index
 
 Réalisé pour faire des tests et éviter de faire n'importe quoi dans KIM.
 Pour les tests, les accès aux fichiers sont en dur dans le code.
@@ -74,6 +74,7 @@ std::map<std::string, std::vector<std::string>> loadFilesInDirectory(const std::
 
     return fileMap;
 }
+
 // RECHERCHE DANS L'INDEX
 // Pour extraire d'autres informations de la ligne qui a trouvé le k-mer dans l'index
 std::string extractSecondWord(const std::string& line) {
