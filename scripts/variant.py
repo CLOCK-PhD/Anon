@@ -12,7 +12,7 @@ class Variant :
             snpPos              (int):  Position du SNP sur le chromosome
             relPos              (int):  Position relative du k-mer sur le chromosome
             kmersCount          (int):  Nombre de k-mers créés à partir du SNP
-            ambiguousKmersCount (int):  Aucun souvenir
+            ambiguousKmersCount (int):  Nombre de k-mers identiques
         """
         self._rsid = rsid
         self._chr = chr
@@ -81,7 +81,18 @@ class Variant :
 
     @property
     def variantProperties(self):
-        ppty = f"{self._rsid}\t{self._chr}\t{self._snp}\t{self._snpPos}\t{self._relPos}\t{self._kmersCount}\t{self._ambiguousKmersCount}"
+        """# Afficher les propriétés de l'objet dans une chaine de caractères
+        Ancienne version : toutes les caractéristiques
+        Nouvelle version : 
+            - rs_id
+            - Position de la variation dans le kmer (snpPos - relPos)
+            - kmers_count
+            - ambiguous k-mers count
+        """
+        #ppty = f"{self._rsid}\t{self._chr}\t{self._snp}\t{self._snpPos}\t{self._relPos}\t{self._kmersCount}\t{self._ambiguousKmersCount}"
+        # Pour indiquer la position du variant :
+        #varPosInKmer = self._snpPos - self._relPos
+        ppty = f"{self._rsid}\t{self._kmersCount}\t{self._ambiguousKmersCount}"
         return ppty
 
 if __name__ == '__main__':
