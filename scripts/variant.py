@@ -90,7 +90,7 @@ class Variant :
             - ambiguous k-mers count
         """
         #ppty = f"{self._rsid}\t{self._chr}\t{self._snp}\t{self._snpPos}\t{self._relPos}\t{self._kmersCount}\t{self._ambiguousKmersCount}"
-        # Pour indiquer la position du variant :
+        # Pour indiquer la position du variant dans le k-mer:
         #varPosInKmer = self._snpPos - self._relPos
         ppty = f"{self._rsid}\t{self._kmersCount}\t{self._ambiguousKmersCount}"
         return ppty

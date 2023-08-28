@@ -56,7 +56,7 @@ def uniquify(path:str) -> str:
 def main():
 
     prefixSize = 5  # Taille du préfixe
-    inputDir = "../data/ksg_test/"  # Dossier contenant les indexes pour chaque chromosome
+    inputDir = "../data/vkg_test/"  # Dossier contenant les indexes pour chaque chromosome
     # Attention de ne pas mettre le nouvel index dedans.
 
     # 1. Créer les suffixes possibles
@@ -67,7 +67,7 @@ def main():
     #print(f"Nombre de prédixes créés : {len(prefList)}")
 
     # 2. Création du dossier de sortie contenant l'index final
-    outputDirectory = "../data/index_full_genome"
+    outputDirectory = "../data/vkg_index"
     try :
         os.makedirs(outputDirectory)
     except FileExistsError:

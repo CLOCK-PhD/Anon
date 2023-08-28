@@ -1,9 +1,7 @@
 #!/usr/bin/python3
 
 """
-ksg.py : K-mer SNP Generator
-
-Version orientée objet de kmer_snp_gen_index.py
+vkg.py : Variant K-mer Generator
 
 DÉFINITIONS :
 
@@ -16,51 +14,31 @@ DÉFINITIONS :
 
     Variants :
     Les variants (de la classe Variant), sont des k-mers identiques à d'autres,
-    mais qui proviennent d'un autre SNP.
+    mais porteur d'une variation différente.
 
 """
 
-# EN COURS : Module de création du dictionnaire des k-mers du génome entier
-
-# A FAIRE : gestions des arguments
 # A FAIRE : sortir les k-mers in_gen
 # A FAIRE : Voir pour cette histoire de position relative du k-mer
-# OK : Générer tous les k-mers du génome et pas seulement le chromosome
-# A FAIRE : Modifier le nom de fastaFiles pour éviter la confusion avec fastaFile
-#           fastaFiles : tous les fasta du génome
-#           fastaFile : séquence de référence pour la création des k-mers porteurs de SNP
-
-# IMPORTANT : Rédiger les objectifs avant de coder.
-#   objectif : le pouvoir de discrimination des k-mers
 
 # IMPORTANT: Penser à faire des readme sur les données utilisées
 
-# test
-
-# 
+# A FAIRE : Récupérer le variant et pas le nt de référence
 
 """
 Notes :
     - Les k-mers contenant un N ne sont pas gardés dans kmerGenerator()
-    - La classe Kmer ne sera pas utilisée parce qu'elle complique le tri
-    - On va garder la méthode avec le dictionnaire et on aura :
+    - On crée un dictionnaire contenant :
         clé = séquence ; valeur = [Variant]
-        Si on retrouve une clé (donc la seq d'un kmer),
-        on lui ajoute le "variant"
+        Si on retrouve une clé (donc la seq d'un kmer), on lui ajoute le "variant"
         Dans le cas contraire, on crée la clé avec son "variant".
-    - Vérifier l'histoire du SNP dans le variant :
-        je crois que je mets l'original et pas le variant
-        la position du kmer et la position du snp dans le génome semblent ne pas correspondre
+    - Le programme donne le nt d'origine et pas l'ALT (à modifier éventuellement).
 """
-
-# 
 
 import re
 import os
 import glob
-
-from variant import Variant
-#from kmer import Kmer
+import argparse
 
 from itertools import product
 from pprint import pprint
@@ -68,6 +46,8 @@ from Bio import SeqIO
 from typing import OrderedDict
 from tqdm import tqdm
 from sys import getsizeof
+
+from variant import Variant
 
 # Récupérer les informations contenues dans le VCF
 # On pourrait en faire un objet
@@ -132,6 +112,8 @@ def get_SNV_umers(sequence:str, snpPos:int, kmerSize:int, snpAlt:list) -> list:
     for alt in snpAlt :
         umer = l_kmer + alt + r_kmer
         # Ici pour supprimer les umers avec N
+        #umerList.append((umer, kmerPos))
+        # TEST - AJOUT DU ALT
         umerList.append((umer, kmerPos))
     return umerList
 
@@ -403,37 +385,49 @@ def uniquify(path:str) -> str:
 
 def main():
 
-    fastaFile = "../data/grch38p13/X.fasta"
-    vcfFile = "../data/snp_latest/X_common_snv.vcf"
-    kmerSize = 31
-    kmers_per_file = 100000
+    # Gestion des arguments
+    parser = argparse.ArgumentParser()
+
+    # Création des arguments
+    parser = argparse.ArgumentParser(description='Creates an index of k-mer carrying a variation, from dbSNP .vcf file and the reference sequence HG38.')
+    parser.add_argument("-f", "--fasta_file", dest="fasta_file", help="fasta input file")
+    parser.add_argument("-d", "--genome_directory", dest="genome_dir", help="Directory containing all the fasta files of the reference genome")
+    parser.add_argument("-i", "--dbsnp", dest="dbsnp", help="dnSNP vcf file")
+    parser.add_argument("-k", "--kmer_size", dest="kmer_size", default=21, type=int, help="(Optional) Select k-mer size")
+    # Revenir là dessus : ça doit être le dossier à créer qui va contenir les fichiers
+    parser.add_argument("-o", "--ouput", dest="output_dir", default="index", help="(Recommanded / Optional) Output folder name")
+
+    # Récupération des valeurs des arguments et attribution
+    args = parser.parse_args()
+    fastaFile = args.fasta_file
+    kmerSize = args.kmer_size
+    outputDirectory = args.output_dir
+    vcfFile = args.dbsnp
+
+    # A REMPLACER PAR LA GESTION DES ARGUMENTS
+    #fastaFile = "../data/grch38p13/X.fasta"
+    #vcfFile = "../data/snp_latest/X_common_snv.vcf"
     
-    
-    # TEST - kmer du génome complet - OK
+    # Dossier du génome
     genomeDirectory = "/home/remycosta/phd/Anon/data/grch38p13/"
     # Récupérer les noms de fichier dans une liste
-    fastaFiles = glob.glob(genomeDirectory + "*.fasta")
-    print(f"Nombre de fichiers fasta : {len(fastaFiles)}")
+    genomeFastaFiles = glob.glob(genomeDirectory + "*.fasta")
+    print(f"Nombre de fichiers fasta : {len(genomeFastaFiles)}")
     #pprint(fastaFiles)
 
     # Création des variables
     kmers = {}                              # Dictionnaire contenant les kmers
-    dupKmers = {}                           # Dico des kmers multiples
-    kmersObj = []                           # Test - Liste des objets Kmer
-    file_number = 0                         # Numéro du fichier de sortie
-    output_file_list = []                   # Liste des fichiers de kmers à merge
-    merged_file_number = 0                  # Numéro du fichier mergé
-    merged_file_list_for_final_merge = []   # Liste des fichiers pour le merge final
+    dupKmers = {}                           # Dico des kmers multiples ÷÷÷÷÷÷÷÷÷÷÷÷÷÷¡
     prefixSize = 5                          # Taille du préfixe de l'index
-    totalKmers = 0
+    totalKmers = 0                          # Nombre de k-mers générés
+
     
     # Adapter le nom du fichier de sortie au chromosome analysé
-    outputDirectory = "../data/ksg_test/kmer_snp_index"
+    #outputDirectory = "../data/ksg_test/kmer_snp_index"
     res = re.search("^.*/(.*).fasta$", fastaFile)
     if res :
         #print(res.group(1))
         outputDirectory = outputDirectory + "_chr" + res.group(1)
-
     try :
         os.makedirs(outputDirectory)
     except FileExistsError:
@@ -472,8 +466,6 @@ def main():
                     pbar.update(1)
 
                     totalKmers += len(kmerList)
-                    # Pas forcément nécessaire de trier à cette étape
-                    #kmerList.sort(key=lambda x:x[0])
                     for kmer in kmerList:
                         # kmer[0] : séquence ; kmer[1] : variants
                         # si la clé existe, on ajoute le variant
@@ -487,41 +479,22 @@ def main():
                     break
     pbar.close()
     print(f"\t{len(kmers)} keys added to the dictionnary")
-    """print(len(kmersObj))
-    kmersObj.sort(key=lambda x: x.sequence)"""
 
     # Marquage des kmers génomiques
-    kmersInDict = len(kmers)
-    inGenomeCount = 0
+    kmersInDict = len(kmers)    # Nombres de k-mers dans le dictionnaire kmers
+    inGenomeCount = 0           # Comptage des k-mers présents dans le génome
+
     # DETECTER LES K-MERS PRESENTS DANS LE GENOME
     print(f"\nDétection des k-mers présents naturellement dans le génome de référence")
-    # AVEC LA SEQUENCE DE REFERENCE DU CHROMOSOME
-    """# Nombre de k-mers possibles à partir de la séquence de référence
-    n_kmers = len(seq) - kmerSize + 1
-    print(f"Number of k-mers to analyse : {n_kmers}")
-    print(f"Looking for genomics {kmerSize}-mers in the dictionnary...")
-    pbar2 = tqdm(total=n_kmers)
-    for i in range(n_kmers):
-        pbar2.update(1)
-        gKmer = seq[i:i+kmerSize]
-        if gKmer in kmers :
-            in_genome = True
-            if kmers[gKmer][-1] != True :
-                kmers[gKmer].append(in_genome)
-                inGenomeCount += 1
-    pbar2.close()"""
-    
-    # AVEC LE GENOME COMPLET - C'est lent mais ça marche
     fastaFileNumber = 1
-    for f in fastaFiles :
-        #print(f)
+    for f in genomeFastaFiles :
         seq = []
         with open(f) as handle :
             print()
             res = re.search("^.*/(.*).fasta$", f)
             if res :
                 chrom_name = res.group(1)
-            print(f"Now reading chromsome {chrom_name} fasta file ({fastaFileNumber}/{len(fastaFiles)})")
+            print(f"Now reading chromsome {chrom_name} fasta file ({fastaFileNumber}/{len(genomeFastaFiles)})")
 
             for record in SeqIO.parse(handle, "fasta"):
                 seq = str(record.seq.upper())
