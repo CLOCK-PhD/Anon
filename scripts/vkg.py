@@ -23,7 +23,7 @@ DÉFINITIONS :
 
 # IMPORTANT: Penser à faire des readme sur les données utilisées
 
-# A FAIRE : Récupérer le variant et pas le nt de référence
+# A FAIRE : Récupérer le variant et pas le nt de référence : VOIR umer_gen.py.
 
 """
 Notes :
@@ -226,7 +226,7 @@ def get_INDEL_umers(sequence:str, snpRef:str, snpPos:int, snpAlt:list, kmerSize:
                 umerList += get_INS_umers(sequence, snpPos, kmerSize, [alt])
             elif len(snpRef) < len(alt) :
                 umerList += get_INS_umers(sequence, snpPos, kmerSize, [alt])
-            elif len(snp_ref) > len(alt):
+            elif len(snpRef) > len(alt):
                 max_kmer_list += get_INS_umers(sequence, snpPos, kmerSize, [alt])
     return max_kmer_list
 
@@ -417,7 +417,7 @@ def main():
 
     # Création des variables
     kmers = {}                              # Dictionnaire contenant les kmers
-    dupKmers = {}                           # Dico des kmers multiples ÷÷÷÷÷÷÷÷÷÷÷÷÷÷¡
+    dupKmers = {}                           # Dico des kmers multiples
     prefixSize = 5                          # Taille du préfixe de l'index
     totalKmers = 0                          # Nombre de k-mers générés
 
