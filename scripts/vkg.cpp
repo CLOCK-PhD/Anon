@@ -20,6 +20,7 @@ et du génome de référence HG38.
 #include <htslib/kseq.h>
 #include <htslib/faidx.h>
 
+
 using namespace std;
 
 int main() {
@@ -53,7 +54,7 @@ int main() {
     bcf1_t *vcf_record = bcf_init();
 
     // Read each record in the VCF file
-    while (bcf_read(vcf_file, vcf_header, vcf_record) == 0) {
+    while (bcf_read(vcf_file, vcf_header, vcf_record) >= 0) {
         // UNPACK - MANDATORY
         //bcf_unpack(vcf_record, BCF_UN_STR);
         //bcf_unpack(vcf_record, BCF_UN_INFO);
@@ -67,30 +68,53 @@ int main() {
         bcf_info_t *info_vc = bcf_get_info(vcf_header, vcf_record, "VC");
 
         // Accessing vcf fields
+        //1:CHROM, 2:POS, 3:ID, 4:REF, 5;ALT, 6:QUAL, 7:FILTER, 8:INFO
         // Get chromosome
         string chromosome_name = bcf_hdr_id2name(vcf_header, vcf_record->rid);
-        
         // Get position
         int position = vcf_record->pos; // 1-based position in VCF
-        
-        // Get REF (vcf_record->d.allele[0] is REF other is ALT)
-        string ref = vcf_record->d.allele[0];
-        
         // Get ID
+        //string moco = "mocos";
         char *rsid = vcf_record->d.id;
+        //string moco = "mocos";
+        // Get REF (vcf_record->d.allele[0] is REF other is ALT)
+        char* ref = vcf_record->d.allele[0];
+        char* blalba = "zi";
+        string toto = "titi";
+        char* fdklsjfsdlkfj = "fsdfsdf";
+        char* ffsdf = "";
+        char *fsdfsdfdsgf = "";
+        string mojn = "";
+        string yuiop = "";
+        char* yujuhhj = "545458sdkhqlkfjqfqdmhfnqdmf";
+        string nhyj = "mfmsdfkùpkfq,mf";
+        string yihohnkqsndqs = "qkjfmdqfs";
+        string sdjfsmojfsdfsd = "sdqsdsqdsqd";
+        
 
         // Print the data
         //std::cout << "Chromosome: " << chromosome_name << ", Position: " << position << std::endl;
-        //std::cout << "ID : " << rsid << std::endl;
-        //std::cout << "REF " << ref << std::endl;
+        std::cout << "ID : " << rsid << std::endl;
+        std::cout << "REF " << ref << std::endl;
 
         // Print ALT - OK
         //std::cout << vcf_record->n_allele << std::endl; // nombre de ref + alleles
-        /*std::cout << "ALT ";
+        std::cout << "ALT ";
         for (int i = 1; i < vcf_record->n_allele; ++i){
             std::cout << vcf_record->d.allele[i] << " ";
         }
-        std::cout << std::endl;*/
+        std::cout << std::endl;
+        // Get ALT - OK
+        // Go through all the elements in vcf_record->d.allele
+        vector<string> alts(vcf_record->n_allele -1);
+        for (int i = 1; i < vcf_record->n_allele; ++i){
+            alts[i-1] = vcf_record->d.allele[i];
+        }
+        cout << "LECURE VECTEUR" << endl;
+        for (int i = 0; i < alts.size(); i++){
+            cout << alts[i] << " ";
+        }
+        cout << endl;
 
         // check if is snp - OK
         //std::cout << "Is SNP : " << bcf_is_snp(vcf_record) << std::endl;
@@ -100,14 +124,21 @@ int main() {
         // print VC CLASS - OK
         //string vc;
         //string vc_string = (char*)(info_vc->vptr); // ICI ÇA MARCHE PAS
-        //cout << "VARIANT CLASS: " << info_vc->vptr << endl;
         const char* var_class = (char *)(info_vc->vptr); // ICI ÇA MARCHE
+        //cout << "VARIANT CLASS: " << info_vc->vptr << endl;
+        //cout << "bonjour" << endl;
+        //const char* var_class = (char *)(info_vc->vptr); // ICI ÇA MARCHE
+        //cout << "assignation varclass" << endl;
         //cout << var_class << endl;
         /*if (info_vc && info_vc->type == BCF_BT_CHAR){
             //cout << "bonjour" << endl;
             string vc_string = (char*)(info_vc->vptr);
             //cout << "VARIANT CLASS :\t" <<vc_string << endl;
         }*/
+        string a = "";
+        string b = "";
+        string c = "";
+        string d = "";
 
         // FREQUENCIES - OK
         /*bcf_info_t *info_freqs = bcf_get_info(vcf_header, vcf_record, "FREQ");
@@ -123,9 +154,10 @@ int main() {
         } else {
             cout << "COMMON : False" << endl;
         }*/
-
+        //int fion = 5;
         // TEST FASTA - OK ! Mais bloque VC si on le met avant alors faut laisser ça à la fin.
-        //cout << "TEST PRINT SEQUENCE" << endl;
+        cout << "TEST PRINT SEQUENCE" << endl;
+        //cout << "ouverture fasta" << endl;
         int *len;
         // TEST POS
         int start = position;
@@ -138,21 +170,22 @@ int main() {
             cerr << "Error: Could not fetch the sequence" << endl;
             return 1;
         }
+        //cout << "fin ouverture fasta" << endl;
 
         // TEST POS
-        //cout << "VERIF : " << ref << " " << sequence << endl;   // for TEST POS
+        cout << "VERIF : " << ref << " " << sequence << endl;   // for TEST POS
         //cout << sequence << endl;
-        string seq = sequence;
-        if (ref[0] != toupper(seq[0])){
+        //string seq = sequence;
+        if (ref[0] != toupper(sequence[0])){
             cerr << "WARNING" << endl;
-            cerr << "\t" << ref[0] << "\t" << seq[0] << endl;
-            cerr << "\t" << ref << "\t" << seq << endl;
+            cerr << "\t" << ref[0] << "\t" << sequence[0] << endl;
+            cerr << "\t" << ref << "\t" << sequence << endl;
             cerr << chromosome_name << " " << rsid << endl;
         }
-
+        //cout << "Fin verification position fasta" << endl;
 
         // Free memory space
-        free(sequence);
+        //free(sequence);
     }
 
     // Close and clean up
