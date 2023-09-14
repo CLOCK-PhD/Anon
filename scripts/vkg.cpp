@@ -20,7 +20,6 @@ et du génome de référence HG38.
 #include <htslib/kseq.h>
 #include <htslib/faidx.h>
 
-
 using namespace std;
 
 int main() {
@@ -41,6 +40,7 @@ int main() {
     }
     //cout << "after load" << endl;
     //system("ls -al /home/remycosta/phd/Anon/data/grch38p14/");
+    //string bonjour = "hello";
 
     // Open VCF file for reading
     htsFile *vcf_file = bcf_open(vcf_file_path, "r");
@@ -55,6 +55,7 @@ int main() {
 
     // Read each record in the VCF file
     while (bcf_read(vcf_file, vcf_header, vcf_record) >= 0) {
+        cout << "----------------------------------" << endl;
         // UNPACK - MANDATORY
         //bcf_unpack(vcf_record, BCF_UN_STR);
         //bcf_unpack(vcf_record, BCF_UN_INFO);
@@ -79,21 +80,10 @@ int main() {
         //string moco = "mocos";
         // Get REF (vcf_record->d.allele[0] is REF other is ALT)
         char* ref = vcf_record->d.allele[0];
-        char* blalba = "zi";
-        string toto = "titi";
-        char* fdklsjfsdlkfj = "fsdfsdf";
-        char* ffsdf = "";
-        char *fsdfsdfdsgf = "";
-        string mojn = "";
-        string yuiop = "";
-        char* yujuhhj = "545458sdkhqlkfjqfqdmhfnqdmf";
-        string nhyj = "mfmsdfkùpkfq,mf";
-        string yihohnkqsndqs = "qkjfmdqfs";
-        string sdjfsmojfsdfsd = "sdqsdsqdsqd";
         
 
         // Print the data
-        //std::cout << "Chromosome: " << chromosome_name << ", Position: " << position << std::endl;
+        std::cout << "Chromosome: " << chromosome_name << ", Position: " << position << std::endl;
         std::cout << "ID : " << rsid << std::endl;
         std::cout << "REF " << ref << std::endl;
 
@@ -116,6 +106,9 @@ int main() {
         }
         cout << endl;
 
+        //string str1;
+        //string str2;
+        
         // check if is snp - OK
         //std::cout << "Is SNP : " << bcf_is_snp(vcf_record) << std::endl;
 
@@ -124,7 +117,7 @@ int main() {
         // print VC CLASS - OK
         //string vc;
         //string vc_string = (char*)(info_vc->vptr); // ICI ÇA MARCHE PAS
-        const char* var_class = (char *)(info_vc->vptr); // ICI ÇA MARCHE
+        string var_class = (char *)(info_vc->vptr); // ICI ÇA MARCHE
         //cout << "VARIANT CLASS: " << info_vc->vptr << endl;
         //cout << "bonjour" << endl;
         //const char* var_class = (char *)(info_vc->vptr); // ICI ÇA MARCHE
@@ -135,10 +128,6 @@ int main() {
             string vc_string = (char*)(info_vc->vptr);
             //cout << "VARIANT CLASS :\t" <<vc_string << endl;
         }*/
-        string a = "";
-        string b = "";
-        string c = "";
-        string d = "";
 
         // FREQUENCIES - OK
         /*bcf_info_t *info_freqs = bcf_get_info(vcf_header, vcf_record, "FREQ");
@@ -155,7 +144,7 @@ int main() {
             cout << "COMMON : False" << endl;
         }*/
         //int fion = 5;
-        // TEST FASTA - OK ! Mais bloque VC si on le met avant alors faut laisser ça à la fin.
+        // TEST FASTA - OK : PROBLEME AVEC LE NOMBRE DE STRING
         cout << "TEST PRINT SEQUENCE" << endl;
         //cout << "ouverture fasta" << endl;
         int *len;
@@ -185,7 +174,21 @@ int main() {
         //cout << "Fin verification position fasta" << endl;
 
         // Free memory space
-        //free(sequence);
+        free(sequence);
+        string strtest1;
+        string strtest2;
+        string strtest3;
+        string strtest4;
+        string strtest5;
+        string strtest6;
+        string strtest7;
+        string strtest8;
+        string strtest9;
+        string strtest10;
+        //string strtest11;
+        //string strtest12 ="fdsflksdjfd";
+        //string strtest13;
+        //string strtest14;
     }
 
     // Close and clean up
