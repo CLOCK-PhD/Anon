@@ -19,8 +19,17 @@ et du génome de référence HG38.
 #include <htslib/kstring.h>
 #include <htslib/kseq.h>
 #include <htslib/faidx.h>
+#include <string>
 
 using namespace std;
+
+void kmer_generator(string umer, int k){
+    // Version basique, génère le kmer;
+    for (int i = 0; i <= umer.length()- k; i++){
+        string kmer = umer.substr(i,k);
+        cout << "K-mer " << i+1 << ":\t" << kmer << endl;
+    }
+}
 
 int main() {
     // Test vcf complet
@@ -55,7 +64,7 @@ int main() {
 
     // Read each record in the VCF file
     while (bcf_read(vcf_file, vcf_header, vcf_record) >= 0) {
-        cout << "----------------------------------" << endl;
+        //cout << "----------------------------------" << endl;
         // UNPACK - MANDATORY
         //bcf_unpack(vcf_record, BCF_UN_STR);
         //bcf_unpack(vcf_record, BCF_UN_INFO);
@@ -75,56 +84,47 @@ int main() {
         // Get position
         int position = vcf_record->pos; // 1-based position in VCF
         // Get ID
-        //string moco = "mocos";
         char *rsid = vcf_record->d.id;
-        //string moco = "mocos";
         // Get REF (vcf_record->d.allele[0] is REF other is ALT)
         char* ref = vcf_record->d.allele[0];
         
 
         // Print the data
-        std::cout << "Chromosome: " << chromosome_name << ", Position: " << position << std::endl;
-        std::cout << "ID : " << rsid << std::endl;
-        std::cout << "REF " << ref << std::endl;
+        //std::cout << "Chromosome: " << chromosome_name << ", Position: " << position << std::endl;
+        //std::cout << "ID : " << rsid << std::endl;
+        //std::cout << "REF " << ref << std::endl;
 
         // Print ALT - OK
         //std::cout << vcf_record->n_allele << std::endl; // nombre de ref + alleles
-        std::cout << "ALT ";
+        /*std::cout << "ALT ";
         for (int i = 1; i < vcf_record->n_allele; ++i){
             std::cout << vcf_record->d.allele[i] << " ";
         }
-        std::cout << std::endl;
+        std::cout << std::endl;*/
         // Get ALT - OK
         // Go through all the elements in vcf_record->d.allele
         vector<string> alts(vcf_record->n_allele -1);
         for (int i = 1; i < vcf_record->n_allele; ++i){
             alts[i-1] = vcf_record->d.allele[i];
         }
-        cout << "LECURE VECTEUR" << endl;
+        /*cout << "LECURE VECTEUR" << endl;
         for (int i = 0; i < alts.size(); i++){
             cout << alts[i] << " ";
         }
-        cout << endl;
-
-        //string str1;
-        //string str2;
+        cout << endl;*/
         
         // check if is snp - OK
         //std::cout << "Is SNP : " << bcf_is_snp(vcf_record) << std::endl;
 
-        // TEST RECUPERATION INFO - OK SI AVANT FASTA - EN FAIT C'EST AUTRE CHOSE MAIS CEST OKER MAINTENANT
+        // TEST RECUPERATION INFO
         //std::cout << "INFOS" << std::endl;
         // print VC CLASS - OK
-        //string vc;
-        //string vc_string = (char*)(info_vc->vptr); // ICI ÇA MARCHE PAS
         string var_class = (char *)(info_vc->vptr); // ICI ÇA MARCHE
         //cout << "VARIANT CLASS: " << info_vc->vptr << endl;
-        //cout << "bonjour" << endl;
         //const char* var_class = (char *)(info_vc->vptr); // ICI ÇA MARCHE
         //cout << "assignation varclass" << endl;
         //cout << var_class << endl;
         /*if (info_vc && info_vc->type == BCF_BT_CHAR){
-            //cout << "bonjour" << endl;
             string vc_string = (char*)(info_vc->vptr);
             //cout << "VARIANT CLASS :\t" <<vc_string << endl;
         }*/
@@ -143,16 +143,17 @@ int main() {
         } else {
             cout << "COMMON : False" << endl;
         }*/
-        //int fion = 5;
         // TEST FASTA - OK : PROBLEME AVEC LE NOMBRE DE STRING
-        cout << "TEST PRINT SEQUENCE" << endl;
+        //cout << "TEST PRINT SEQUENCE" << endl;
         //cout << "ouverture fasta" << endl;
         int *len;
         // TEST POS
-        int start = position;
-        int end = position;
-        //int start = position-(kmer_size-1);   // for TEST POS
-        //int end = position+(kmer_size+1);     // for TEST POS
+        //int start = position;
+        //int end = position;
+        int start = position - (kmer_size-1);   // for TEST POS
+        int end = position + (kmer_size-1);     // for TEST POS - la bonne taille semble être kmer_size-1
+        //cout << "start: " << start << "\tend: " << end << endl; 
+        //cout << "size: " << end - start << endl;
         const char *reg = chromosome_name.c_str();
         char *sequence = faidx_fetch_seq(fai, reg, start, end, len);
         if(!sequence){
@@ -162,16 +163,36 @@ int main() {
         //cout << "fin ouverture fasta" << endl;
 
         // TEST POS
-        cout << "VERIF : " << ref << " " << sequence << endl;   // for TEST POS
+        string seq = sequence;
+        //cout << "VERIF : " << ref << " " << seq[kmer_size-1] << endl;   // for TEST POS
         //cout << sequence << endl;
         //string seq = sequence;
-        if (ref[0] != toupper(sequence[0])){
+        if (ref[0] != toupper(seq[kmer_size-1])){
             cerr << "WARNING" << endl;
-            cerr << "\t" << ref[0] << "\t" << sequence[0] << endl;
+            cerr << "\t" << ref[0] << "\t" << seq[kmer_size-1] << endl;
             cerr << "\t" << ref << "\t" << sequence << endl;
             cerr << chromosome_name << " " << rsid << endl;
         }
+        //cout << "u-mer :\t" << endl;
+        //cout << sequence << endl;
+        // TEST GENERATION ALT_UMERS:
+        //cout << "TEST ALT UMERS" << endl;
+        string umer = sequence;
+        /*for (int i=0; i < alts.size(); i++){
+            string alt_umer_left = umer.substr(0,kmer_size);
+            string alt_umer_right = umer.substr(kmer_size+1);
+            //cout << alt_umer[kmer_size-1] << endl;
+            //cout << alt_umer_left << endl;
+            //cout << alt_umer_right << endl;
+            cout << alt_umer_left << "X" << alt_umer_right << endl;
+
+        }*/
         //cout << "Fin verification position fasta" << endl;
+
+        // TEST KMER_GENERATOR()
+        cout << "TEST KMER_GENERATOR()" << endl;
+        cout << umer << endl;
+        kmer_generator(umer, kmer_size);
 
         // Free memory space
         free(sequence);
@@ -183,8 +204,8 @@ int main() {
         string strtest6;
         string strtest7;
         string strtest8;
-        string strtest9;
-        string strtest10;
+        //string strtest9;  // Deuxième sacrifice pour "seq"
+        //string strtest10; // Premier sacrifice pour "umer"
         //string strtest11;
         //string strtest12 ="fdsflksdjfd";
         //string strtest13;
