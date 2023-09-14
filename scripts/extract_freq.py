@@ -28,7 +28,15 @@ Dresse un histogramme des distributions pour chaque fichier, puis pour tous les 
 * Vérifications des positions des SNP :
     - OK : Positions identiques
         - Faire un dictionnaire qui contient le nom du chromosome et le nombre de snp a la mm position
-    - OK : Décompte des SNP à proximité (avant-après) (->liste avec toutes les positions)
+    - REFAIRE : Décompte des SNP à proximité (avant-après) (->liste avec toutes les positions)
+        - Faire en cumulatif (0, 1 ou plus, ) (meh?)
+    - Décompte des snps à proximité dans les k-mers
+        regarder la fenêtre d'ouverture dont on dispo et faire un comptage en faisant glisser le long 
+
+* GRAPHE DES SOURCES :
+     - couleur par population et conditions
+     - 
+
 
 * NOUVEAU PROBLÈME :
     Certains SNPs ont les même rsid.
@@ -46,7 +54,7 @@ from matplotlib.cm import get_cmap
 from matplotlib.colors import Normalize
 from pprint import pprint
 from tqdm import tqdm
-from math import ceil
+from math import ceil, floor
 
 class Snp :
 
@@ -58,9 +66,9 @@ class Snp :
         Parameters:
         - chrom     (str):          Nom du chromosome
         - snpRef    (str):          SNP de référence
-        - pos    (int):          Position du SNP dans le chromosome
+        - pos       (int):          Position du SNP dans le chromosome
         - rsid      (str):          Identifiant du SNP
-        - alt    (list(str)):    Liste contenant toutes les variations connues du SNP
+        - alt       (list(str)):    Liste contenant toutes les variations connues du SNP
         - vc        (str):          Variation Class, le type de variations
         - freq      (list(tuples))  Fréquences : source et fréquences observées
         """
@@ -184,7 +192,7 @@ def _count_generator(reader):
         yield b
         b = reader(1024 * 1024)
 
-# Correcting Frenquencies
+# Correcting null frenquencies
 def floatFreq(freq:str)->int:
     if freq == ".":
         f = 0
@@ -195,19 +203,19 @@ def floatFreq(freq:str)->int:
 # Extract info from vcf file
 def getVcfLineInfo(line)-> Snp:
     """Récupère les informations contenues dans chaque ligne du fichier VCF de SNPdb.
-    Retourne un tuple qui contient dans l'ordre :
+    Retourne un objetc Snp contenant :
         - chrom     (str):          Nom du chromosome
         - snp_ref   (str):          SNP de référence
         - snp_pos   (int):          Position du SNP dans le chromosome
         - rs_id     (str):          Identifiant du SNP
         - snp_alt   (list(str)):    Liste contenant toutes les variations connues du SNP
-        - vc        (str):          Variation Class, le type de variations 
+        - varClass  (str):          Variation Class, le type de variations 
 
     Parameters:
         line:       Ligne du fichier vcf
 
     Returns:
-        Snp:        chrom(str), snpRef(str), snpPos(int), rsid(str), snpAlt(list(str)), vc(str)
+        Snp:        chrom(str), snpRef(str), snpPos(int), rsid(str), snpAlt(list(str)), varClass(str), freq(list(FreqInfo))
     """
     # Split the vcf file line
     description = line.split("\t")
@@ -217,6 +225,7 @@ def getVcfLineInfo(line)-> Snp:
     chromRes = re.search("NC_0*(.*)\.", chrom)
     if chromRes:
         chrom = chromRes.group(1)
+        # Converting to X or Y chromosome
         if chrom == "24":
             chrom = "Y"
         if chrom == "23":
@@ -249,17 +258,13 @@ def getVcfLineInfo(line)-> Snp:
         print(rsid)
 
     # Get Frequencies
-    #print()
-    #print(rsid)
-    freqList = []
+    freqList = []   # List of FreqInfo objects, containing sources and allele frequencies
     for f in frequencies_info :
         res = re.search("(.*):(.*)", f)
         if res :
-            sourceName = res.group(1)
-            #print(sourceName)
-            freqs = res.group(2).split(",")
-            #print(freqs)
-            #print(len(freqs))
+            sourceName = res.group(1)       # Frequency source names
+            freqs = res.group(2).split(",") # Recorded allele frequencies
+            # Adjusting null frequencies to 0.0
             if len(freqs) == 2:
                 freq = FreqInfo(sourceName, floatFreq(freqs[0]), freqAlt1=floatFreq(freqs[1]))
                 freqList.append(freq)
@@ -269,8 +274,6 @@ def getVcfLineInfo(line)-> Snp:
             if len(freqs) == 4:
                 freq = FreqInfo(sourceName, floatFreq(freqs[0]), floatFreq(freqs[1]), floatFreq(freqs[2]), freqAlt3=floatFreq(freqs[3]))
                 freqList.append(freq)
-        #print(len(freqList))
-        #print(freqList)
 
     snp = Snp(chrom, snpRef, int(snpPos), rsid, snpAlt, vc, freqList)
     return snp
@@ -319,6 +322,8 @@ def snpVicinityCount(snpPosList:list, kmerSize:int)->dict:
     pbarVicinity.close()
     return snpCounts
 
+# Count the number of SNPs contained by k-mers
+
 # Create the graph for the SNP proximity Count
 def snpVicinityGraph(snp_counts:dict, graphFileName:str):
     plt.figure(figsize=[19.2, 10.8])
@@ -334,7 +339,7 @@ def snpVicinityGraph(snp_counts:dict, graphFileName:str):
     bar_width = 0.8 # Set the width of the bars (adjust as needed)
     bars = plt.bar(counts, frequency, color=cmap(norm(counts)), edgecolor='black', linewidth=1, width=bar_width)
     # Set y-axis to a logarithmic scale
-    plt.yscale('log')
+    #plt.yscale('log')
     # Add percentages as text on top of each bar
     for bar, percentage in zip(bars, percentages):
         font_size = min(12, bar.get_height() * 0.1)  # Adjust 0.3 as needed for font size scaling
@@ -345,7 +350,7 @@ def snpVicinityGraph(snp_counts:dict, graphFileName:str):
                  va='bottom')
     # Customize the plot
     plt.xlabel("Number of Nearby SNPs")
-    plt.ylabel("Frequency (log scale)")
+    plt.ylabel("Frequency")
     plt.title("Distribution of nearby SNPs")
     plt.grid(axis='y', linestyle="--", alpha=0.5)
     #plt.show()
@@ -388,19 +393,19 @@ def main():
         di_snps = 0                     # Number of di-allelic SNPs
         tri_snps = 0                    # Number of tri-allelic SNPs
         tetra_snps = 0                  # Number of tetra-allelic SNPs
-        # Décompte SNP corrigé
+        # Corrected allelic type count
         corrected_no_freq_alt_snp = 0   # Number of SNPs with no frequencies recorded, after correction
         corrected_di_snps = 0           # Number of di-allelic SNPs, after correction
         corrected_tri_snps = 0          # Number of tri-allelic SNPs, after correction
         corrected_tetra_snps = 0        # Number of tetra-allelic SNPs, after correction
         # Weird SNPs
-        empty_freq = []                 # List of SNPs' rsids with no allelic frequencies
-        # Proximité des SNPS
+        empty_freq = []                 # List of SNPs' rsids with more than 3 alleles
+        # SNPs proximity
         snpPositions = []               # List of all SNPs positions for proximity analysis
         # Frequences : 
         freq_sources = {}               # Key=sources, Values = number of times the source has been counted
 
-        # Counting number of lines for progression bar
+        # Counting lines for the progression bar tool
         lineCount = 0
         with open(inputFile, 'rb') as fp:
             c_generator = _count_generator(fp.raw.read)
@@ -410,17 +415,13 @@ def main():
         # Opening file
         pbar = tqdm(total=lineCount)
         with open(inputFile, "r") as f:
-            last_snp = Snp("0", "N", 0, "rs0", [], "", [])
-            samePosSnpCount = 0
+            last_snp = Snp("0", "N", 0, "rs0", [], "", [])  # To count SNPs at the same position
+            samePosSnpCount = 0 # Counter for the SNPs at the same position
             # Processing file line
             for line in f:
                 pbar.update(1)
-                # Create the SNP object
-                snp = getVcfLineInfo(line)
-                #print(snp.rsid, len(snp.alt), snp.alt)
-                # Add the snp position to the list snp position list for proximity analysis
-                snpPositions.append(snp.pos)
-                #print(f"{snp.pos} - {last_snp.pos}")
+                snp = getVcfLineInfo(line)      # Creates the object Snp
+                snpPositions.append(snp.pos)    # For proximity analysis
 
                 # Allelic Count
                 if len(snp.alt) == 1:
@@ -464,11 +465,9 @@ def main():
 
                 # Check if SNP is at the same position than the last
                 if snp.pos == last_snp.pos:
-                    #print(f"{snp.rsid}:{snp.pos}\t{last_snp.rsid}:{last_snp.pos}")
                     samePosSnpCount += 1
                     sameSnpPosRecord.append(f"{graphFileName}\t{snp.rsid}\t{last_snp.rsid}")
-                # Keep last SNP in memory
-                last_snp = snp              
+                last_snp = snp
         pbar.close()
 
         # Compter les sources des fréquences
@@ -477,7 +476,7 @@ def main():
         # SNP proximity distribution
         snpCounts = snpVicinityCount(snpPositions, kmerSize)
         snpVicinityGraph(snpCounts, graphFileName)
-
+    
         # Affichage analyses
         print(f"\nAnlysis results for {graphFileName}:")
         print(f"SNP allelism")
@@ -608,44 +607,6 @@ def main():
     #plt.show()
     plt.grid(axis='y', linestyle="--", alpha=0.5)
     plt.savefig(f"global_source_distribution.png", bbox_inches="tight", dpi=200)
-    plt.close()
-
-    # ALLELIC TYPE DISTRIBUTION HISTOGRAM - LOG SCALE
-    original_data = [global_di_snps, global_tri_snps, global_tetra_snps]
-    corrected_data = [global_corrected_di_snps, global_corrected_tri_snps, global_corrected_tetra_snps]
-    x_labels = ["diallelic", "triallelic", "tetra-allelic"]
-    # Create an array of x-values for the bars
-    x = np.arange(len(x_labels))
-    # Set the width of the bars
-    bar_width = 1
-    # Create the figure and two subplots
-    plt.figure(figsize=[19.2, 10.8])
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5), sharey=True)
-    # Define colors and edgecolors for the bars
-    colors = ['purple', 'orange', 'yellow']
-    edgecolors = 'black'
-    # Plot the "Original" histogram in the first subplot
-    ax1.bar(x, original_data, bar_width, label='Original', color=colors, edgecolor=edgecolors)
-    # Set x-axis labels and customize the plot
-    ax1.set_xticks(x)
-    ax1.set_xticklabels(x_labels)
-    #ax1.set_xlabel('Allelic Types')
-    ax1.set_title('dbSNP original data')
-    ax1.yaxis.grid(True, alpha=0.5, linestyle="--")
-    ax1.set_yscale('log')
-    # Plot the "Corrected" histogram in the second subplot
-    ax2.bar(x, corrected_data, bar_width, label='Corrected', color=colors, edgecolor=edgecolors)
-    # Set x-axis labels and customize the plot
-    ax2.set_xticks(x)
-    ax2.set_xticklabels(x_labels)
-    #ax2.set_xlabel('Allelic Types')
-    ax2.set_title('Curated version')
-    ax2.yaxis.grid(True, alpha=0.5, linestyle="--")
-    ax2.set_yscale('log')
-    plt.tight_layout()
-    # Show the plot
-    #plt.show()
-    plt.savefig(f"Global_allelic_types_correction_log.png", bbox_inches="tight", dpi=200)
     plt.close()
 
     # ALLELIC TYPE DISTRIBUTION HISTOGRAM
