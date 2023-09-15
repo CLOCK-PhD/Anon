@@ -102,7 +102,7 @@ void kmer_generator(string umer, int k){
         for (char& c : kmer) {
             c = std::toupper(c);
         }
-        std::cout << "K-mer " << i + 1 << ":\t" << kmer << std::endl;
+        //std::cout << "K-mer " << i + 1 << ":\t" << kmer << std::endl;
         i++;        
     }
 
@@ -219,6 +219,7 @@ int main() {
         if (var_class != "SNV"){
             continue;
         }
+        
         // Get frequency project source - OK
         // Afficher les fréquences
         /*if (info_freqs && info_freqs->type == BCF_BT_CHAR){
@@ -240,12 +241,12 @@ int main() {
 
         // Afficher les infos après exclusion :
         //cout << chromosome_name << "\t" << rsid << endl;
+        /////////////////////////////
+        // RETRIEVE FASTA SEQUENCE // OK : PROBLEME AVEC LE NOMBRE DE STRING
+        /////////////////////////////
 
-        // RETRIEVE FASTA SEQUENCE - OK : PROBLEME AVEC LE NOMBRE DE STRING
-        int *len;
-        // TEST POS - OK
-        //int start = position;
-        //int end = position;
+        // MÉTHODE POUR LES SNV
+        int *len;   // Nécessaire pour faidx_fetch_seq; raison inconnue mais permet de fonctionner.
         int start = position - (kmer_size-1);
         int end = position + (kmer_size-1);
         const char *reg = chromosome_name.c_str();
@@ -255,23 +256,22 @@ int main() {
             return 1;
         }
 
-        // TEST POS - OK
-        // Petit soucis avec les fasta NT et NW, on devrait les virer.
         // TEST EXCLUSION : NW et NT - OK, par conservation des NC uniquement.
+        // On vérifie si les séquences commencent par NC
         if (chromosome_name.compare(0, 2, "NC") != 0) {
-            cerr << "Not Primary assembly sequence : " << chromosome_name << endl;
+            //cerr << "Not Primary assembly sequence : " << chromosome_name << endl;
             free(sequence);
             continue;
         }
+        // il faudrait penser à s'occuper du cas de la séquence MT
 
-        // POUR LES SNV :
-        string seq = sequence;
+        //string seq = sequence;
         //cout << "VERIF : " << ref << " " << seq[kmer_size-1] << endl;   // for TEST POS
         //cout << sequence << endl;
         //string seq = sequence;
-        if (ref[0] != toupper(seq[kmer_size-1])){
+        if (ref[0] != toupper(sequence[kmer_size-1])){
             cerr << "WARNING : " << chromosome_name << " " << rsid << endl;
-            cerr << "\t" << ref[0] << "\t" << seq[kmer_size-1] << endl;
+            cerr << "\t" << ref[0] << "\t" << sequence[kmer_size-1] << endl;
             cerr << "\t" << ref << "\t" << sequence << endl;
             free(sequence);
             continue;
@@ -287,23 +287,24 @@ int main() {
         // Si on est là, c'est qu'on a passé tous les tests
         selected_snps_count++;
         //bcf_info_t *info_freqs = bcf_get_info(vcf_header, vcf_record, "FREQ");
-        // Affichage info
-        cout << "-------------------------------------" << endl;
+        // AFFICHAGE INFOS
+        //cout << "-------------------------------------" << endl;
         // Print the data
-        cout << chromosome_name << "\t" << rsid  << "\t" << position << "\t" << ref << "\t";
+        /*cout << chromosome_name << "\t" << rsid  << "\t" << position << "\t" << ref << "\t";
         for (int i = 0; i < alts.size(); i++){
             if(i == alts.size()-1){
                 cout << alts[i] << endl;
             } else {
                 cout << alts[i] << ", ";
             }
-        }
+        }*/
         // Afficher les fréquences - demande des sacrifices de strings
         /*if (info_freqs && info_freqs->type == BCF_BT_CHAR){
             cout << "FREQUENCIES : " << endl;
             const char *freqs = (char*)(info_freqs->vptr);
             cout << freqs << endl;
         }*/
+        // FIN AFFICHAGE INFOS
 
         // SUPPRESSION DES FREQ NULLES - A FAIRE ICI
         // Récupérer les différentes fréquences, sélectionner une référence, ajuster les alt
@@ -311,37 +312,54 @@ int main() {
         // TEST GENERATION ALT_UMERS:
         //cout << "TEST ALT UMERS" << endl;
         string umer = sequence;
-        /*for (int i=0; i < alts.size(); i++){
-            string left = umer.substr(0,kmer_size);
-            string right = umer.substr(kmer_size+1);
-            //cout << alt_umer[kmer_size-1] << endl;
-            //cout << left << endl;
-            //cout << right << endl;
-            cout << left << "X" << right << endl;
-
-        }*/
+        //cout << umer << endl;
+        for (int i=0; i < alts.size(); i++){
+            string left = umer.substr(0,kmer_size-1);   //OK
+            string right = umer.substr(kmer_size);      //OK
+            //cout << left << "X" << right << endl;
+            //cout << left << alts[i] << right << endl;
+            string alt_umer = left + alts[i] + right;
+            //cout << alt_umer << endl;
+            //cout << "K-mers for " << ref << "->" << alts[i] << ":" << endl;
+            kmer_generator(alt_umer, kmer_size);
+        }
 
         // TEST KMER_GENERATOR() - OK
         //cout << "TEST KMER_GENERATOR()" << endl;
         //cout << umer << endl;
-        kmer_generator(umer, kmer_size);
+        //kmer_generator(umer, kmer_size);
 
         // Free memory space
         free(sequence);
-        string strtest1;    
-        string strtest2;    
-        string strtest3;    
-        string strtest4;   
-        string strtest5;   
-        string strtest6;
-        string strtest7;
-        string strtest8;
-        string strtest9;
-        string strtest10;
-        string strtest11;
-        string strtest12;
-        string strtest13; // FREQ affichage : sacrifice 1, mais affiche la première ligne avant le core dumped
-        //string strtest14;
+
+        /* STRINGS SACRIFIABLES
+        Pour une raison que j'ignore, le nombre de strings dans le programme entraine un core dumped.
+        Cela peut arriver si on ajoute un string ou un char* (moins fréquent), ou parfois qu'on en enlève.
+        Certaines conditions nécessitent plusieurs sacrifices.
+        Une "solution" pour contourner le problème est :
+        - mettre une partie du code en commentaire (lecture de fasta, en général)
+        - compiler
+        - ajouter des strings, compiler
+        - Décommenter
+        - Compiler
+        - Quand on rencontre un problème : on sacrifie une string du stock
+        - Quand on arrive au bout : on recommence.
+        */
+        string sacrifice1;    
+        string sacrifice2;    
+        string sacrifice3;    
+        string sacrifice4;   
+        string sacrifice5;   
+        string sacrifice6;
+        string sacrifice7;
+        string sacrifice8;
+        string sacrifice9;
+        string sacrifice10;
+        string sacrifice11;
+        string sacrifice12;
+        string sacrifice13; // FREQ affichage : sacrifice 1, mais affiche la première ligne avant le core dumped
+        string sacrifice14;   // Là j'ai du la rajouter quand j'ai supprimé une autre string;
+        //string sacrifice15;
     }
 
     // Close and clean up
