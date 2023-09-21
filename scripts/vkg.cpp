@@ -11,20 +11,22 @@ et du génome de référence HG38.
 
 /* A FAIRE :
 Exclusion 
-* Exclure les SNP qui ont REF=N : EN COURS
+* OK - Exclure les SNP qui ont REF=N
 * Exclure les umers de longueur < 2k-1
-* Exclure les cas où REF != REF dans la séquence d'origine
+* OK - Exclure les cas où REF != REF dans la séquence d'origine
 * Voir si on peut exclure les séquences qui ne sont pas NC000...
 Urgent
 * Générer les umers pour chaque var
 * Faire des vrais k-mers, pas juste un print
 Développer :
 * Fonctions pour gérer tous les cas des VC (voir vkg.py)
-    SNV - OK (c'est le cas le plus simple donc bon...)
+    OK - SNV (c'est le cas le plus simple donc bon...)
     MNV
     INS
     DEL
     INDEL
+* Log messages d'erreurs
+    Pour ne plus avoir à afficher des trucs dans la console, et garder une trace de ce qui s'est passé
 Gros truc :
 * Comparer aux k-mers du génome de référence
 */
@@ -51,6 +53,7 @@ bool isPrintable(char c) {
 }
 
 std::string removeNonPrintableChars(const std::string& input) {
+    // Remove hidden characters from a string
     std::string result;
     for (char c : input) {
         if (isPrintable(c)) {
@@ -61,6 +64,7 @@ std::string removeNonPrintableChars(const std::string& input) {
 }
 
 std::string displayHiddenChars(const std::string& input) {
+    // Show hidden characters in a string
     std::string result;
     for (char c : input) {
         if (c >= 32 && c <= 126) {
@@ -74,7 +78,6 @@ std::string displayHiddenChars(const std::string& input) {
 }
 // FIN TEST REMOVE HIDDEN CHAR - OK
 
-// Pour les nt dégénérés
 bool isDegenerate(char base) {
     // Define a function to check if a base is degenerate
     return (base == 'R' || base == 'Y' || base == 'S' || base == 'W' || base == 'K' ||
@@ -82,6 +85,7 @@ bool isDegenerate(char base) {
 }
 
 void kmer_generator(string umer, int k){
+    // Generate k-mers from a u-mer, given a k-mer size k
     int uLength = umer.length();
     int i = 0;
     while(i <= uLength - k){
@@ -89,7 +93,7 @@ void kmer_generator(string umer, int k){
         for (int j = i; j < i + k; j++) {
             if (isDegenerate(umer[j])) {
                 containsDegenerate = true;
-                i = j+1;
+                i = j+1; // Skip to the position after the degenerated nt
                 break;
             }
         }
@@ -142,26 +146,23 @@ int main() {
 
     // Read each record in the VCF file
     while (bcf_read(vcf_file, vcf_header, vcf_record) >= 0) {
-        //cout << "----------------------------------" << endl;
         // UNPACK - MANDATORY
-        //bcf_unpack(vcf_record, BCF_UN_STR);
-        //bcf_unpack(vcf_record, BCF_UN_INFO);
-        bcf_unpack(vcf_record, BCF_UN_ALL);
+        //bcf_unpack(vcf_record, BCF_UN_STR);   // Pour unpack 
+        //bcf_unpack(vcf_record, BCF_UN_INFO); // Pour unpack jusqu'à INFO
+        bcf_unpack(vcf_record, BCF_UN_ALL); // Unpack everything
 
         // Accessing INFO_FIELD_NAME
         // COMMON - OK
         bcf_info_t *info_common = bcf_get_info(vcf_header, vcf_record, "COMMON");        
         // VC (Variant Class) - OK
         bcf_info_t *info_vc = bcf_get_info(vcf_header, vcf_record, "VC");
-        // FREQ - OK (Ici, ne demande pas de sacrifice)
+        // FREQ - OK
         bcf_info_t *info_freqs = bcf_get_info(vcf_header, vcf_record, "FREQ");
 
         // Accessing vcf fields
         //1:CHROM, 2:POS, 3:ID, 4:REF, 5;ALT, 6:QUAL, 7:FILTER, 8:INFO
-        // Get chromosome - OK
+        // Get chromosome - OK (no hidden char)
         string chromosome_name = bcf_hdr_id2name(vcf_header, vcf_record->rid);
-        // test remove
-        //chromosome_name = removeNonPrintableChars(chromosome_name);
         // Get position - OK
         int position = vcf_record->pos; // 1-based position in VCF
         // Get ID - OK
@@ -179,8 +180,8 @@ int main() {
             cout << "DEGEN : " << ref << " for " << rsid << " in " << chromosome_name << endl;
             continue;
         }
+        // Faire le test où on parcourt chaque char de REF, et on stop dès qu'un N est rencontré
         
-
         // Print the data
         //std::cout << "Chromosome: " << chromosome_name << ", Position: " << position << std::endl;
         //std::cout << "ID : " << rsid << std::endl;
@@ -191,8 +192,7 @@ int main() {
         for (int i = 1; i < vcf_record->n_allele; ++i){
             std::cout << vcf_record->d.allele[i] << " ";
         }
-        std::cout << std::endl;*/
-        /*cout << "LECURE VECTEUR" << endl;
+        std::cout << std::endl;
         for (int i = 0; i < alts.size(); i++){
             cout << alts[i] << " ";
         }
@@ -204,23 +204,20 @@ int main() {
         // GET INFO - WIP (1/2)
         //std::cout << "INFOS" << std::endl;
 
-        // print VC CLASS - OK
-        // Contient des caractères cachés qu'il faut nettoyer
-        string var_class = (char *)(info_vc->vptr); // ICI ÇA MARCHE
-        //string var_class_true = displayHiddenChars(var_class);
-        //cout << "CACHÉ : " << var_class_true << endl; 
+        // Get Variant Class (VC) - Warning : Contains hiddent characters - OK
+        string var_class = (char *)(info_vc->vptr);
         var_class = removeNonPrintableChars(var_class);
         /*if (info_vc && info_vc->type == BCF_BT_CHAR){
             string vc_string = (char*)(info_vc->vptr);
             //cout << "VARIANT CLASS :\t" <<vc_string << endl;
         }*/
 
-        // TEST EXCLUSION : NOT SNV - OK
+        // EXCLUSION : NOT SNV - OK
         if (var_class != "SNV"){
             continue;
         }
         
-        // Get frequency project source - OK
+        // Get frequency project source (FREQ) - OK
         // Afficher les fréquences
         /*if (info_freqs && info_freqs->type == BCF_BT_CHAR){
             cout << "FREQUENCIES : " << endl;
@@ -234,18 +231,16 @@ int main() {
         } else {
             cout << "COMMON : False" << endl;
         }*/
-        // TEST EXCLUSION - COMMON - OK
+        // EXCLUSION - NOT COMMON - OK
         if(!info_common){
             continue;
         }
 
-        // Afficher les infos après exclusion :
-        //cout << chromosome_name << "\t" << rsid << endl;
         /////////////////////////////
         // RETRIEVE FASTA SEQUENCE // OK : PROBLEME AVEC LE NOMBRE DE STRING
         /////////////////////////////
 
-        // MÉTHODE POUR LES SNV
+        // Dealing with SNVs
         int *len;   // Nécessaire pour faidx_fetch_seq; raison inconnue mais permet de fonctionner.
         int start = position - (kmer_size-1);
         int end = position + (kmer_size-1);
@@ -265,10 +260,7 @@ int main() {
         }
         // il faudrait penser à s'occuper du cas de la séquence MT
 
-        //string seq = sequence;
-        //cout << "VERIF : " << ref << " " << seq[kmer_size-1] << endl;   // for TEST POS
-        //cout << sequence << endl;
-        //string seq = sequence;
+        // EXCLUSION - REF != NT in the sequence
         if (ref[0] != toupper(sequence[kmer_size-1])){
             cerr << "WARNING : " << chromosome_name << " " << rsid << endl;
             cerr << "\t" << ref[0] << "\t" << sequence[kmer_size-1] << endl;
@@ -358,7 +350,7 @@ int main() {
         string sacrifice11;
         string sacrifice12;
         string sacrifice13; // FREQ affichage : sacrifice 1, mais affiche la première ligne avant le core dumped
-        string sacrifice14;   // Là j'ai du la rajouter quand j'ai supprimé une autre string;
+        string sacrifice14; // Là j'ai dû la rajouter quand j'ai supprimé une autre string;
         //string sacrifice15;
     }
 
