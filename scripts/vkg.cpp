@@ -43,6 +43,8 @@ Gros truc :
 #include <htslib/kseq.h>
 #include <htslib/faidx.h>
 #include <string>
+#include <sstream>
+#include <algorithm>
 
 using namespace std;
 
@@ -106,7 +108,7 @@ void kmer_generator(string umer, int k){
         for (char& c : kmer) {
             c = std::toupper(c);
         }
-        //std::cout << "K-mer " << i + 1 << ":\t" << kmer << std::endl;
+        std::cout << "K-mer " << i + 1 << ":\t" << kmer << std::endl;
         i++;        
     }
 
@@ -218,12 +220,10 @@ int main() {
         }
         
         // Get frequency project source (FREQ) - OK
-        // Afficher les fréquences
-        /*if (info_freqs && info_freqs->type == BCF_BT_CHAR){
-            cout << "FREQUENCIES : " << endl;
-            const char *freqs = (char*)(info_freqs->vptr);
-            cout << freqs << endl;
-        }*/
+        const char *freqs;
+        if (info_freqs && info_freqs->type == BCF_BT_CHAR){
+            freqs = (char*)(info_freqs->vptr);
+        }
 
         // IS COMMON - OK
         /*if (info_common){
@@ -278,28 +278,73 @@ int main() {
 
         // Si on est là, c'est qu'on a passé tous les tests
         selected_snps_count++;
-        //bcf_info_t *info_freqs = bcf_get_info(vcf_header, vcf_record, "FREQ");
-        // AFFICHAGE INFOS
-        //cout << "-------------------------------------" << endl;
+
+        /////////////////////
+        // AFFICHAGE INFOS //
+        /////////////////////
+
+        cout << "-------------------------------------" << endl;
         // Print the data
-        /*cout << chromosome_name << "\t" << rsid  << "\t" << position << "\t" << ref << "\t";
+        cout << chromosome_name << "\t" << rsid  << "\t" << position << "\t" << ref << "\t";
         for (int i = 0; i < alts.size(); i++){
             if(i == alts.size()-1){
                 cout << alts[i] << endl;
             } else {
                 cout << alts[i] << ", ";
             }
-        }*/
-        // Afficher les fréquences - demande des sacrifices de strings
-        /*if (info_freqs && info_freqs->type == BCF_BT_CHAR){
-            cout << "FREQUENCIES : " << endl;
-            const char *freqs = (char*)(info_freqs->vptr);
-            cout << freqs << endl;
-        }*/
+        }
+
+        // Print FREQ
+        cout << freqs << endl;
         // FIN AFFICHAGE INFOS
 
-        // SUPPRESSION DES FREQ NULLES - A FAIRE ICI
+        // GESTION FREQ
+        // PB : CORE DUMPED SI LA DERNIERE FREQUENCE SE TERMINE PAR "."
         // Récupérer les différentes fréquences, sélectionner une référence, ajuster les alt
+
+        /*// Create a stringstream from the input string
+        istringstream iss(freqs);
+        string token;
+        // Vector to store extracted source names and values
+        std::vector<std::pair<std::string, std::vector<float>>> sources;
+        // Tokenize the input string by '|' character
+        while (std::getline(iss, token, '|')) {
+            // Tokenize each part by ':' character
+            std::istringstream partStream(token);
+            std::string sourceName;
+            std::vector<float> values;
+            std::getline(partStream, sourceName, ':');
+
+            // Tokenize the values part by ','
+            while (std::getline(partStream, token, ',')) {
+                // Replace "." with "0" if it's not a valid number
+                bool isValidNumber = true;
+                for (char c : token) {
+                    if (!isdigit(c) && c != '.' && c != '-')
+                        isValidNumber = false;
+                }
+                if (token == "." || (token.empty() && isValidNumber))
+                    token = "0";
+
+                // Convert the string to a float
+                float value = std::stof(token);
+                values.push_back(value);
+            // Convert the string to a float
+            //values.push_back(std::stof(token));
+            }
+            // Add the source name and values to the vector
+            sources.push_back(std::make_pair(sourceName, values));
+        }
+
+        // AFFICHAGE TEST FREQ
+        for (const auto& source : sources) {
+            std::cout << "Source Name: " << source.first << std::endl;
+            std::cout << "Values: ";
+            for (const auto& value : source.second) {
+                std::cout << value << " ";
+            }
+        std::cout << std::endl;
+        }*/
 
         // TEST GENERATION ALT_UMERS:
         //cout << "TEST ALT UMERS" << endl;
@@ -311,8 +356,7 @@ int main() {
             //cout << left << "X" << right << endl;
             //cout << left << alts[i] << right << endl;
             string alt_umer = left + alts[i] + right;
-            //cout << alt_umer << endl;
-            //cout << "K-mers for " << ref << "->" << alts[i] << ":" << endl;
+            //cout << alt_umer << endl;g++ vkg.cpp -std=c++17 -Wall -Wextra -o truc -lhts            //cout << "K-mers for " << ref << "->" << alts[i] << ":" << endl;
             kmer_generator(alt_umer, kmer_size);
         }
 
@@ -351,7 +395,14 @@ int main() {
         string sacrifice12;
         string sacrifice13; // FREQ affichage : sacrifice 1, mais affiche la première ligne avant le core dumped
         string sacrifice14; // Là j'ai dû la rajouter quand j'ai supprimé une autre string;
-        //string sacrifice15;
+        string sacrifice15;
+        string sacrifice16;
+        string sacrifice17;
+        string sacrifice18;
+        //string sacrifice19;
+        //string sacrifice20;
+        //string sacrifice21;
+        //string sacrifice22;
     }
 
     // Close and clean up
