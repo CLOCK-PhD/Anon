@@ -1,0 +1,22 @@
+# ignorer le dossier de données
+data
+
+# Ignorer les programmes complémentaires téléchargés
+programmes_annexes
+
+# Ignorer les fichiers .o
+snp_kmer_extractor/*.o
+
+scripts/search
+scripts/search_index
+scripts/openIndex
+scripts/fq
+scripts/cpp
+scripts/kseq.h
+scripts/yay
+scripts/openIndexv2
+scripts/indexDirLink
+scripts/truc
+VariantKmerGenerator
+
+scripts/old/VariantKmerGenerator
