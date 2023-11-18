@@ -2,6 +2,8 @@
 
 Dossier contenant les fichiers relatifs à la bibliographie et les analyses que j'ai pu effectuer au cours de ma thèse.
 
+(peut contenir des informations qui ne sont plus à jour)
+
 ## Contenu
 
 ### anon_metrics.md
