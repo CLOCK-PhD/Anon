@@ -20,3 +20,7 @@ scripts/truc
 VariantKmerGenerator
 
 scripts/old/VariantKmerGenerator
+scripts/old/genkmertest
+
+# cache python
+scripts/__pycache__/variant.cpython-38.pyc
