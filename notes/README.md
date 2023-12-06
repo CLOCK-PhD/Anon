@@ -13,7 +13,8 @@ overview of metrics used in genomics
 analyse des résultats du programme vkg, et utilisation de jellyfish pour des observations complémentaires avant implémentation de notre index de recherche.
 
 ### probability_of_identity.md
-Assess the likelihood that two individuals share the same genetic profile at a set of specific genetic markers
+Assess the likelihood that two individuals share the same genetic profile at a set of specific genetic markers. The probability that two unrelated individuals
+share a genotype.
 
 ### information_theory.md
 - Entropy: quantity of information
