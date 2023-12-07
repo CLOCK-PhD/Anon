@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 # A FAIRE :
+# Intégrer 
 # correction allelisme
 # Gérer le problème des SNPs à la même position
 
@@ -133,6 +134,10 @@ class Snp :
     def freqs(self, f:dict):
         self._freqs = f
 
+    def properties(self):
+        ppty = f"{self._rsid}\n\t{self._chr}\n\t{self._pos}\n\t{self._varClass}\n\t{self._ref}\n\t{self._alt}\n\t{self._freqs}\n"
+        print(ppty)
+
 #########################
 # MES FONCTIONS DE MORT ################################################################################
 #########################
@@ -141,14 +146,19 @@ class Snp :
 ##########################################
 # Fonctions converties depuis c++
 ##########################################
+
+# OK
 def isDegenerate(base):
     # Define a function to check if a base is degenerate
     return base in ['R', 'Y', 'S', 'W', 'K', 'M', 'B', 'D', 'H', 'V', 'N']
 
-def kmer_generator(umer, k):
+# OK POUR SNV - RETURN + ADD SNP POS IN KMER + NBR OF SNPS CREATED // Génère les k-mers
+def kmer_generator(umer, k)->list:
     # Generate k-mers from a u-mer, given a k-mer size k
+    kmers = []
     uLength = len(umer)
     i = 0
+    kmer_nbr = 0
     while i <= uLength - k:
         containsDegenerate = False
         for j in range(i, i + k):
@@ -159,11 +169,15 @@ def kmer_generator(umer, k):
         if containsDegenerate:
             # Skip this k-mer if it contains a degenerate nucleotide
             continue
-        kmer = umer[i:i + k]
-        # Convert characters to uppercase before outputting
-        kmer = kmer.upper()
-        print(f"K-mer {i + 1}:\t{kmer}")
+        kmer = umer[i:i + k].upper()
+        kmer_nbr += 1
+        varPos = k - i - 1
+        kmers.append((kmer, varPos, kmer_nbr))
+        #print(f"K-mer {i + 1}:\t{kmer}\t{varPos}")
         i += 1
+    #print (f"number of k-mers created: {kmer_nbr}")
+    return kmers
+
 
 
 ##########################################
@@ -275,13 +289,14 @@ def get_SNV_umers(sequence:pysam.libcfaidx.FastaFile,chrom:str, snpPos:int, kmer
     umerList = []
     start = (snpPos - 1) - (kmerSize - 1)
     end = snpPos + (kmerSize - 1)
-    print(sequence.fetch(chrom, start, end).lower())
+    #print(sequence.fetch(chrom, start, end).lower())
     for alt in snpAlt :
         #print(alt)
         umer = list(sequence.fetch(chrom, start, end).upper())
         umer[kmerSize-1] = alt
+        #umer[kmerSize-1] = "X" # A supprimer
         umer = "".join(umer)
-        umerList.append((umer, start)) # Renvoie la position du u-mer dans la séquence
+        umerList.append((umer, start, alt)) # Renvoie la position du u-mer dans la séquence
     return umerList
 
 # A ADAPTER // Récupérer le u-mer pour DEL :
@@ -425,10 +440,8 @@ def getUmerFromPos(sequence:str, chrom:str, pos:int, variantClass:str, kmerSize:
             return umerList
 
     if variantClass == "SNV":
-        print("yay ! snv !")
+        #print("yay ! snv !")
         return get_SNV_umers(sequence, chrom,  pos, kmerSize, snpAlt)
-    else:
-        print("bouh!")
     """elif variantClass == "DEL":
         return get_DEL_umers(sequence, snpPos, kmerSize, snpRef)
     elif variantClass == "INDEL":
@@ -471,9 +484,9 @@ def main():
     parser = argparse.ArgumentParser()
 
     # Création des arguments
-    parser = argparse.ArgumentParser(description='Creates an index of k-mer carrying a variation, from dbSNP .vcf file and the reference sequence HG38.')
-    parser.add_argument("-f", "--fasta", dest="fasta_file", help="fasta input file")
-    parser.add_argument("-fai", "--faidx", dest="faidx", help="faidx index")
+    parser = argparse.ArgumentParser(description='Creates an index of k-mers carrying a variation, from dbSNP .vcf file and the reference sequence GrCh38.')
+    parser.add_argument("-f", "--fasta", dest="fasta_file", help="Path to fasta input file")
+    parser.add_argument("-fai", "--faidx", dest="faidx", help="Path to faidx index")
     parser.add_argument("-v", "--vcf", dest="dbsnp", help="dbSNP vcf file")
     parser.add_argument("-k", "--kmer_size", dest="kmer_size", default=21, type=int, help="(Optional) Select k-mer size")
     # Revenir là dessus : ça doit être le dossier à créer qui va contenir les fichiers
@@ -492,55 +505,73 @@ def main():
     fastaFile = "/home/remycosta/phd/Anon/data/grch38p14/GCF_000001405.40_GRCh38.p14_genomic.fna"
     faiPath = "/home/remycosta/phd/Anon/data/grch38p14/GCF_000001405.40_GRCh38.p14_genomic.fna.fai"
 
-    # Ouvrir les fichiers sources
+    # Open source files
     bcf_in = VariantFile(vcfFile)
     fasta = pysam.FastaFile(fastaFile, faiPath)
     #type: pysam.libcfaidx.FastaFile
 
     # Initialize empty DataFrame with column names
-    columns = ['kmer', 'rsID', 'num', 'in_genome']
+    columns = ['kmer', 'rsID', 'var', 'varPos', 'kmerNum', 'in_genome']
     df = pd.DataFrame(columns=columns)
 
-    # On compte les lignes pour tqdm et pour voir si ça marche
-    """print("Counting lines...")
-    line_count = 0
-    with gzip.open(vcfFile, 'rt') as file:
-        for line in file:
-            line_count += 1
-
-        print(f"Number of lines in {vcfFile}: {line_count}")"""
-
+    counter = 0
     # On rentre dedans
-    for rec in bcf_in:
-        if "FREQ" not in rec.info.keys():
-            break
-        else:
-            # SELECTION AVEC LES FREQUENCES
-            freqs = ','.join(rec.info["FREQ"])
-            freq_dict = {}
-            for e in freqs.split("|"):
-                #print(e.split(":"))
-                freq_dict[e.split(":")[0]] = e.split(":")[1:]
-            if "dbGaP_PopFreq" not in freq_dict.keys():
-                #print(f"{rsId} : No dbGaP_PopFreq")
-                continue
+    pbar = tqdm(total=1000000)
+    while counter < 1000000:
+        for rec in bcf_in:
+            if "FREQ" not in rec.info.keys():
+                break
             else:
-                snp = getVcfLineInfo(rec)
+                freqs = ','.join(rec.info["FREQ"])
+                freq_dict = {}
+                for e in freqs.split("|"):
+                    freq_dict[e.split(":")[0]] = e.split(":")[1:]
+                if "dbGaP_PopFreq" not in freq_dict.keys():
+                    #print(f"{rec.id} : No dbGaP_PopFreq")
+                    continue
+                else:
+                    pbar.update(1)
+                    snp = getVcfLineInfo(rec)
+                    #snp.properties()
 
+                    umerList = getUmerFromPos(fasta, snp.chr, snp.pos, snp.varClass, kmerSize, snp.ref, snp.alt)
+                    #pprint(umerList)
 
-                print(f"{snp.rsid}\n\t{snp.chr}\n\t{snp.pos}\n\t{snp.varClass}\n\t{snp.ref}\n\t{snp.alt}\n\t{snp.freqs}\n")
-                print()
+                    if umerList != None:
+                        for u in umerList:
+                            kmers = kmer_generator(u[0], kmerSize)
+                        for k in kmers:
+                            #print(f"{k[0]}\t{k[1]}\t{u[2]}") # Affiche: kmer, alt pos, alt
+                            #values = f"{k[0]}\t{rec.id}\t{u[2]}\t{k[1]}\t{k[2]}\t{False}"
+                            #print(values)
 
-                umerList = getUmerFromPos(fasta, snp.chr, snp.pos, snp.varClass, kmerSize, snp.ref, snp.alt)
-                pprint(umerList)
+                            # Remplissage du DataFrame
+                            df = df.append({
+                                'kmer': k[0],
+                                'rsID': rec.id,
+                                'var': u[2],
+                                'varPos': k[1],
+                                'kmerNum': k[2],
+                                'in_genome': False}, ignore_index=True)
+            counter += 1
+    pbar.close()
 
-                if umerList != None:
-                    for u in umerList:
-                        kmer_generator(u[0], kmerSize)
+    # Sorting DataFrame by "kmer" column                
+    df.sort_values(by='kmer', inplace=True)
 
+    # Setting "kmer" column as index
+    df.set_index('kmer', inplace=True)
 
+    # Write DataFrame to .tsv file
+    outputDirectory = "/home/remycosta/phd/Anon/data/kim_index/"
+    outputFilePath = "/home/remycosta/phd/Anon/data/kim_index/index.tsv"
+    df.to_csv(outputFilePath, sep='\t')
 
+    # Save the index to a file
+    df.index.to_series().to_csv(f"{outputDirectory}index_file.csv", header=False)
 
+    bcf_in.close()
+    fasta.close()
     print("le chat")
 
 if __name__ == '__main__':
