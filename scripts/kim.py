@@ -1,5 +1,9 @@
 #!/usr/bin/python3
 
+# A FAIRE :
+# correction allelisme
+# Gérer le problème des SNPs à la même position
+
 """
 Parce que j'en ai marre.
 
@@ -50,6 +54,84 @@ from typing import OrderedDict
 from tqdm import tqdm
 from sys import getsizeof
 
+###########
+# CLASSES #############################################################################################
+###########
+
+# OK
+class Snp :
+
+    def __init__(self, chr:str, ref:str, pos:int, rsid:str, alt:list, varClass:str, freqs:dict) -> None:
+        """
+        Générateur de l'objet dbSNP.
+        Contient les informations contenues dans chaque ligne du fichier vcf.
+
+        Parameters:
+        - chrom     (str):          Nom du chromosome
+        - snpRef    (str):          SNP de référence
+        - pos       (int):          Position du SNP dans le chromosome
+        - rsid      (str):          Identifiant du SNP
+        - alt       (tuple(str)):   Liste contenant toutes les variations connues du SNP
+        - vc        (str):          Variation Class, le type de variations
+        - freqs     (dict)          Fréquences : source et fréquences observées
+        """
+
+        self._chr = chr
+        self._ref = ref
+        self._pos = pos
+        self._rsid = rsid
+        self._alt = alt
+        self._varClass = varClass
+        self._freqs = freqs
+    
+    @property
+    def chr(self):
+        return self._chr
+    @chr.setter
+    def chr(self, c:str):
+        self._chr = c
+
+    @property
+    def ref(self):
+        return self._ref
+    @ref.setter
+    def ref(self, r:str):
+        self._ref = r
+
+    @property
+    def pos(self):
+        return self._pos
+    @pos.setter
+    def pos(self, p:int):
+        self._pos = p
+
+    @property
+    def rsid(self):
+        return self._rsid
+    @rsid.setter
+    def rsid(self, id:str):
+        self._rsid = id
+
+    @property
+    def alt(self):
+        return self._alt
+    @alt.setter
+    def alt(self, a:tuple):
+        self._alt = a
+
+    @property
+    def varClass(self):
+        return self._varClass
+    @varClass.setter
+    def varClass(self, vc:str):
+        self._varClass = vc
+
+    @property
+    def freqs(self):
+        return self._freqs
+    @freqs.setter
+    def freqs(self, f:dict):
+        self._freqs = f
 
 #########################
 # MES FONCTIONS DE MORT ################################################################################
@@ -86,8 +168,98 @@ def kmer_generator(umer, k):
 
 ##########################################
 
-# A ADAPTER // Récupérer les u-mers pour SNV
-def get_SNV_umers(sequence:str, snpPos:int, kmerSize:int, snpAlt:list) -> list:
+# OK
+def uniquify(path:str) -> str:
+    """
+    Génère un nom de dossier unique pour FileExistsError
+
+    Parameters :
+        path    (str):  Nom du chemin du dossier à créer
+
+    Returns :
+        path    (str):  Nouveau nom du chemin du dossier
+    """
+    filename, extension = os.path.splitext(path)
+    counter = 1
+
+    while os.path.exists(path):
+        path = filename + "_" + str(counter) + extension
+        counter += 1
+
+    return path
+
+# OK // Création de l'objet SNP
+def getVcfLineInfo(line:pysam.libcbcf.VariantRecord)-> Snp:
+    """Récupère les informations contenues dans chaque ligne du fichier VCF de SNPdb.
+    Retourne un objetc Snp contenant :
+        - chrom     (str):          Nom du chromosome
+        - snp_ref   (str):          SNP de référence
+        - snp_pos   (int):          Position du SNP dans le chromosome
+        - rs_id     (str):          Identifiant du SNP
+        - snp_alt   (list(str)):    Liste contenant toutes les variations connues du SNP
+        - vc        (str):          Variation Class, le type de variations 
+
+    Parameters:
+        line:       Ligne du fichier vcf
+
+    Returns:
+        Snp:        chrom(str), snpRef(str), snpPos(int), rsid(str), snpAlt(list(str)), varClass(str), freq(list(FreqInfo))
+    """
+    # Split the vcf file line
+    #description = line.split("\t")
+
+    # Get chromosome
+    chrom = line.chrom
+    """chromRes = re.search("NC_0*(.*)\.", chrom)
+    if chromRes:
+        chrom = chromRes.group(1)
+        # Converting to X or Y chromosome
+        if chrom == "24":
+            chrom = "Y"
+        if chrom == "23":
+            chrom = "X"
+    """
+    # Get SNP position
+    snpPos = line.pos
+
+    # Get RSID
+    rsid = line.id
+
+    # Get SNP reference
+    snpRef = line.ref
+
+    # Get SNP Alt(s)
+    snpAlt = line.alts
+
+    # Qual and filters are empty in dbSNP vcf file
+    #qual = description[5]
+    #filter = description[6]
+
+    # Extract VC
+    vc = line.info["VC"]
+
+    # Extract Frequencies
+    freqs = ','.join(line.info["FREQ"])
+    freq_dict = {}
+    for e in freqs.split("|"):
+        #print(e.split(":"))
+        source = e.split(":")[0]
+        the_freqs = e.split(":")[1].split(",")
+        #freq_dict[e.split(":")[0]] = e.split(":")[1].split(",")
+        frequencies = []
+        for f in the_freqs:
+            if f == ".":
+                frequencies.append(0.0)
+            else:
+                frequencies.append(float(f))
+        freq_dict[source] = frequencies
+
+
+    snp = Snp(chrom, snpRef, int(snpPos), rsid, snpAlt, vc, freq_dict)
+    return snp
+
+# OK // Récupérer les u-mers pour SNV
+def get_SNV_umers(sequence:pysam.libcfaidx.FastaFile,chrom:str, snpPos:int, kmerSize:int, snpAlt:tuple) -> list:
     """Pour un SNV : récupère les u-mers dans une liste, pour chaque variation possible.
     Ces u-mers sont utilisés pour générer tous les k-mers des SNP.
 
@@ -101,15 +273,15 @@ def get_SNV_umers(sequence:str, snpPos:int, kmerSize:int, snpAlt:list) -> list:
         umerList    (list):         Liste des u-mers pour chaque variation
     """
     umerList = []
-    kmerPos = snpPos - kmerSize + 1
-    l_kmer = sequence[snpPos - kmerSize + 1 : snpPos]
-    r_kmer = sequence[snpPos+1 : snpPos + kmerSize]
+    start = (snpPos - 1) - (kmerSize - 1)
+    end = snpPos + (kmerSize - 1)
+    print(sequence.fetch(chrom, start, end).lower())
     for alt in snpAlt :
-        umer = l_kmer + alt + r_kmer
-        # Ici pour supprimer les umers avec N
-        #umerList.append((umer, kmerPos))
-        # TEST - AJOUT DU ALT
-        umerList.append((umer, kmerPos))
+        #print(alt)
+        umer = list(sequence.fetch(chrom, start, end).upper())
+        umer[kmerSize-1] = alt
+        umer = "".join(umer)
+        umerList.append((umer, start)) # Renvoie la position du u-mer dans la séquence
     return umerList
 
 # A ADAPTER // Récupérer le u-mer pour DEL :
@@ -190,7 +362,7 @@ def get_MNV_umers(sequence:str, snpRef:str, snpPos:int, kmerSize:int, snpAlt:lis
         return umerList
     return umerList
 
-# Récupérer les u-mers pour INDEL
+# A ADAPTER // Récupérer les u-mers pour INDEL
 def get_INDEL_umers(sequence:str, snpRef:str, snpPos:int, snpAlt:list, kmerSize:int) -> list:
     """Pour un INDEL : récupère les u-mers dans une liste, pour chaque variation possible.
     Ces u-mers sont utilisés pour générer tous les k-mers des SNP.
@@ -226,7 +398,7 @@ def get_INDEL_umers(sequence:str, snpRef:str, snpPos:int, snpAlt:list, kmerSize:
     return max_kmer_list
 
 # A ADAPTER // Extraction des u-mers et envoi à la fonction spécifique
-def getUmerFromPos(sequence:str, pos:int, variantClass:str, kmerSize:int, snpRef:str, snpAlt:list) -> list:
+def getUmerFromPos(sequence:str, chrom:str, pos:int, variantClass:str, kmerSize:int, snpRef:str, snpAlt:list) -> list:
     """Génère le u-mer en fonction de la classe de variant en appelant une fonction spécifique.
     Retourne une liste contenant les umers.
 
@@ -242,7 +414,7 @@ def getUmerFromPos(sequence:str, pos:int, variantClass:str, kmerSize:int, snpRef
         umerList        (list):         Liste des u-mers pour chaque variation.
 
     """
-    snpPos = pos - 1
+    #snpPos = pos - 1
     umerList = []
 
     # Exclusion des kmers contenant des points
@@ -253,15 +425,18 @@ def getUmerFromPos(sequence:str, pos:int, variantClass:str, kmerSize:int, snpRef
             return umerList
 
     if variantClass == "SNV":
-        return get_SNV_umers(sequence, snpPos, kmerSize, snpAlt)
-    elif variantClass == "DEL":
+        print("yay ! snv !")
+        return get_SNV_umers(sequence, chrom,  pos, kmerSize, snpAlt)
+    else:
+        print("bouh!")
+    """elif variantClass == "DEL":
         return get_DEL_umers(sequence, snpPos, kmerSize, snpRef)
     elif variantClass == "INDEL":
         return get_INDEL_umers(sequence, snpRef, snpPos, snpAlt, kmerSize)
     elif variantClass == "INS":
         return get_INS_umers(sequence, snpPos, kmerSize, snpAlt)
     elif variantClass == "MNV":
-        return get_MNV_umers(sequence, snpRef, snpPos, kmerSize, snpAlt)
+        return get_MNV_umers(sequence, snpRef, snpPos, kmerSize, snpAlt)"""
     
 # Découper le u-mers pour récupérer les kmers et leurs positions
 def kmerGenerator(kmerSize:int, umerToCut:str) -> list:
@@ -285,24 +460,7 @@ def kmerGenerator(kmerSize:int, umerToCut:str) -> list:
     #pprint(f"kmerList : \n{kmerList}")
     return kmerList
 
-def uniquify(path:str) -> str:
-    """
-    Génère un nom de dossier unique pour FileExistsError
 
-    Parameters :
-        path    (str):  Nom du chemin du dossier à créer
-
-    Returns :
-        path    (str):  Nouveau nom du chemin du dossier
-    """
-    filename, extension = os.path.splitext(path)
-    counter = 1
-
-    while os.path.exists(path):
-        path = filename + "_" + str(counter) + extension
-        counter += 1
-
-    return path
 
 ###########
 # LE MAIN ########################################################################################
@@ -337,6 +495,7 @@ def main():
     # Ouvrir les fichiers sources
     bcf_in = VariantFile(vcfFile)
     fasta = pysam.FastaFile(fastaFile, faiPath)
+    #type: pysam.libcfaidx.FastaFile
 
     # Initialize empty DataFrame with column names
     columns = ['kmer', 'rsID', 'num', 'in_genome']
@@ -353,26 +512,31 @@ def main():
 
     # On rentre dedans
     for rec in bcf_in:
-    #print(rec)
-    #print(rec.alts)
-    #print(rec.info['FREQ'])
-    # truc à récupérer
-    #chrom, snp_ref, snp_pos, rs_id, snp_alt, vc
-        chrom = rec.chrom   # str
-        snpRef = rec.ref    # str
-        snpPos = rec.pos    # int
-        rsId = rec.id       # string
-        snpAlt = rec.alts   # tuple
-        vc = rec.info["VC"] # string
+        if "FREQ" not in rec.info.keys():
+            break
+        else:
+            # SELECTION AVEC LES FREQUENCES
+            freqs = ','.join(rec.info["FREQ"])
+            freq_dict = {}
+            for e in freqs.split("|"):
+                #print(e.split(":"))
+                freq_dict[e.split(":")[0]] = e.split(":")[1:]
+            if "dbGaP_PopFreq" not in freq_dict.keys():
+                #print(f"{rsId} : No dbGaP_PopFreq")
+                continue
+            else:
+                snp = getVcfLineInfo(rec)
 
-        """print(type(chrom))
-        print(type(snpRef))
-        print(type(snpPos))
-        print(type(rsId))
-        print(type(snpAlt))
-        print(type(vc))"""
 
-        print(f"{rsId}\n\t{chrom}\n\t{snpPos}\n\t{snpRef}\n\t{snpAlt}\n\t{vc}\n")
+                print(f"{snp.rsid}\n\t{snp.chr}\n\t{snp.pos}\n\t{snp.varClass}\n\t{snp.ref}\n\t{snp.alt}\n\t{snp.freqs}\n")
+                print()
+
+                umerList = getUmerFromPos(fasta, snp.chr, snp.pos, snp.varClass, kmerSize, snp.ref, snp.alt)
+                pprint(umerList)
+
+                if umerList != None:
+                    for u in umerList:
+                        kmer_generator(u[0], kmerSize)
 
 
 
