@@ -28,7 +28,7 @@ Développer :
 * Log messages d'erreurs
     Pour ne plus avoir à afficher des trucs dans la console, et garder une trace de ce qui s'est passé
 Gros truc :
-* Comparer aux k-mers du génome de référence
+* OK - Comparer aux k-mers du génome de référence
 */
 
 
@@ -48,7 +48,7 @@ Gros truc :
 
 using namespace std;
 
-// TEST REMOVE HIDDEN CHAR - OK
+// TEST REMOVE HIDDEN CHAR - OK ---------------------------------------------------
 bool isPrintable(char c) {
     // Check if the character is a printable ASCII character
     return (c >= 32 && c <= 126);
@@ -78,10 +78,11 @@ std::string displayHiddenChars(const std::string& input) {
     }
     return result;
 }
-// FIN TEST REMOVE HIDDEN CHAR - OK
+// FIN TEST REMOVE HIDDEN CHAR - OK ------------------------------------------------
 
+//  FONCTIONS ----------------------------------------------------------------------
 bool isDegenerate(char base) {
-    // Define a function to check if a base is degenerate
+    // Define a function to check if a base is degenerated
     return (base == 'R' || base == 'Y' || base == 'S' || base == 'W' || base == 'K' ||
             base == 'M' || base == 'B' || base == 'D' || base == 'H' || base == 'V' || base == 'N');
 }
@@ -89,7 +90,8 @@ bool isDegenerate(char base) {
 void kmer_generator(string umer, int k){
     // Generate k-mers from a u-mer, given a k-mer size k
     int uLength = umer.length();
-    int i = 0;
+    int i = 0; // compteur pour la boucle
+    int kmer_count = 0; // compter de k-mers générés
     while(i <= uLength - k){
         bool containsDegenerate = false;
         for (int j = i; j < i + k; j++) {
@@ -104,6 +106,7 @@ void kmer_generator(string umer, int k){
             continue;
         }
         std::string kmer = umer.substr(i, k);
+        kmer_count ++;
         // Convert characters to uppercase before outputting
         for (char& c : kmer) {
             c = std::toupper(c);
@@ -111,13 +114,67 @@ void kmer_generator(string umer, int k){
         std::cout << "K-mer " << i + 1 << ":\t" << kmer << std::endl;
         i++;        
     }
+    cout << "K-mers generated: " << kmer_count << endl;
 
 }
+
+std::vector<std::string> split(const std::string &s, char delimiter) {
+    // Initialize a vector of strings to store tokens
+    std::vector<std::string> tokens;
+
+    // Convert the string to a stream for parsing
+    std::istringstream stream(s);
+
+    // Initialize a string to store each token
+    std::string token;
+
+    // Loop through the stream and extract tokens
+    while (std::getline(stream, token, delimiter)) {
+        // Add each token to the vector
+        tokens.push_back(token);
+    }
+
+    // Return the vector of tokens
+    return tokens;
+}
+
+std::vector<float> get_dbgap_freq(const std::string input){
+    // Return a vector containing the frequencies of dbGaP_PopFreq
+
+    char delimiter = '|'; // Split each source and its frequencies from the others
+
+    std::vector<std::string> tokens = split(input, delimiter);
+    std::vector<float> dbgap_freq;
+
+    for (int i=0; i < tokens.size(); i++){
+        std::vector<std::string> subtokens = split(tokens[i], ':');
+        std::string sourcename = subtokens[0];
+        std::string allele_frequencies = subtokens[1];
+        if (sourcename != "dbGaP_PopFreq"){
+            continue;
+        }
+        else{
+            std::vector<std::string> frequencies = split(allele_frequencies, ',');
+            for(int j=0; j < frequencies.size(); j++){
+                if (removeNonPrintableChars(frequencies[j]) == "."){
+                    dbgap_freq.push_back(0.0);
+                }
+                else{
+                    dbgap_freq.push_back(std::stof(frequencies[j]));
+                }
+            }
+        }
+    }
+
+    return dbgap_freq;
+}
+
+// FIN FONCTIONS -------------------------------------------------------------------</s>
 
 int main() {
 
     ///////////////////
-    // OPENING FILES //
+    // OPENING FILES /////////////////////////////////////////////////////////////////////
     ///////////////////
 
     // OPENING FASTA FILE - OK
@@ -135,9 +192,12 @@ int main() {
         std::cerr << "Error opening VCF file: " << vcf_file_path << std::endl;
         return 1;
     }
+    ///////////////////////////
+    //INITIALIZING VARIABLES ///////////////////////////////////////////////////////////////
+    ///////////////////////////
 
-    // VARIABLES
     int kmer_size = 21;
+
     // STATS
     int selected_snps_count;
     //int kmers_count;
@@ -273,7 +333,7 @@ int main() {
 
 
         /////////////////////////////
-        // GENERATING K-MERS : WIP //
+        // GENERATING K-MERS : WIP ///////////////////////////////////////////////////////////////
         /////////////////////////////
 
         // Si on est là, c'est qu'on a passé tous les tests
@@ -294,71 +354,49 @@ int main() {
             }
         }
 
-        // Print FREQ
-        cout << freqs << endl;
-        // FIN AFFICHAGE INFOS
+        // FREQ
+        cout << '\n' << freqs << '\n' << endl;
+        cout << displayHiddenChars(freqs) << endl;
 
-        // GESTION FREQ
-        // PB : CORE DUMPED SI LA DERNIERE FREQUENCE SE TERMINE PAR "."
-        // Récupérer les différentes fréquences, sélectionner une référence, ajuster les alt
-
-        /*// Create a stringstream from the input string
-        istringstream iss(freqs);
-        string token;
-        // Vector to store extracted source names and values
-        std::vector<std::pair<std::string, std::vector<float>>> sources;
-        // Tokenize the input string by '|' character
-        while (std::getline(iss, token, '|')) {
-            // Tokenize each part by ':' character
-            std::istringstream partStream(token);
-            std::string sourceName;
-            std::vector<float> values;
-            std::getline(partStream, sourceName, ':');
-
-            // Tokenize the values part by ','
-            while (std::getline(partStream, token, ',')) {
-                // Replace "." with "0" if it's not a valid number
-                bool isValidNumber = true;
-                for (char c : token) {
-                    if (!isdigit(c) && c != '.' && c != '-')
-                        isValidNumber = false;
-                }
-                if (token == "." || (token.empty() && isValidNumber))
-                    token = "0";
-
-                // Convert the string to a float
-                float value = std::stof(token);
-                values.push_back(value);
-            // Convert the string to a float
-            //values.push_back(std::stof(token));
-            }
-            // Add the source name and values to the vector
-            sources.push_back(std::make_pair(sourceName, values));
+        // CREATE DBGAP FREQUENCIES VECTOR
+        vector<float> dbgap_freqs = get_dbgap_freq(freqs);
+        for(int i = 0; i < dbgap_freqs.size(); i++){
+            cout << '\t' << dbgap_freqs[i] << endl;
         }
 
-        // AFFICHAGE TEST FREQ
-        for (const auto& source : sources) {
-            std::cout << "Source Name: " << source.first << std::endl;
-            std::cout << "Values: ";
-            for (const auto& value : source.second) {
-                std::cout << value << " ";
-            }
-        std::cout << std::endl;
-        }*/
+        // GESTION FREQ
+        // Réglé : PB : CORE DUMPED SI LA DERNIERE FREQUENCE SE TERMINE PAR "."
+        // Récupérer les différentes fréquences, sélectionner une référence, ajuster les alt
 
         // TEST GENERATION ALT_UMERS:
         //cout << "TEST ALT UMERS" << endl;
         string umer = sequence;
         //cout << umer << endl;
-        for (int i=0; i < alts.size(); i++){
-            string left = umer.substr(0,kmer_size-1);   //OK
-            string right = umer.substr(kmer_size);      //OK
-            //cout << left << "X" << right << endl;
-            //cout << left << alts[i] << right << endl;
-            string alt_umer = left + alts[i] + right;
-            //cout << alt_umer << endl;g++ vkg.cpp -std=c++17 -Wall -Wextra -o truc -lhts            //cout << "K-mers for " << ref << "->" << alts[i] << ":" << endl;
-            kmer_generator(alt_umer, kmer_size);
+
+        // TEST - SUPPRESSION DES ALT A FREQUENCE NULLE
+        if (alts.size() != dbgap_freqs.size()-1){
+            free(sequence);
+            //cout << "HAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" << endl;
+            continue;
+        } else {
+            for (int i=0; i < alts.size(); i++){
+                if ((dbgap_freqs[i+1]) == 0){
+                    //free(sequence);
+                    cout << "NTM" << endl;
+                    continue;
+                } else {
+                    string left = umer.substr(0,kmer_size-1);   //OK
+                    string right = umer.substr(kmer_size);      //OK
+                    //cout << left << "X" << right << endl;
+                    //cout << left << alts[i] << right << endl;
+                    string alt_umer = left + alts[i] + right;
+                    //cout << alt_umer << endl;
+                    //cout << "K-mers for " << ref << "->" << alts[i] << ":" << endl;
+                    kmer_generator(alt_umer, kmer_size);
+                }
+            }
         }
+
 
         // TEST KMER_GENERATOR() - OK
         //cout << "TEST KMER_GENERATOR()" << endl;
@@ -398,7 +436,7 @@ int main() {
         string sacrifice15;
         string sacrifice16;
         string sacrifice17;
-        string sacrifice18;
+        //string sacrifice18;
         //string sacrifice19;
         //string sacrifice20;
         //string sacrifice21;
