@@ -10,12 +10,19 @@ et du génome de référence HG38.
 */
 
 /* A FAIRE :
+OK - Comptage : à revoir, on vient de passer de 18 à 596M mais en gagnant 3 minutes
+Meme temps avec SNPs selected:	-1665587806 quand is_snp est utilisé, donc c'est bien la merde
+140087086844482 maintenant, ce qui n'est juste pas possible, donc on doit avoir une légère couille
+34376430793 depuis le check sur tous les éléments de la ref
+C'est réglé, il fallait juste fixer la valeur de départ à 0...
 Exclusion 
-* PRIO - Réorganiser les priorités pour les exclusions
+* OK - Exclure sur le nom du chromosome dès le début, vu que c'est la première info qu'on a
+    => récupérer seulement les NC (primary assembly)
+* PRIO - EN COURS - Réorganiser les priorités pour les exclusions
 * OK - Exclure les SNP qui ont REF=N
 * OK - Exclure les umers de longueur < 2k-1
 * OK - Exclure les cas où REF != REF dans la séquence d'origine
-* Voir si on peut exclure les séquences qui ne sont pas NC000...
+* OK - Voir si on peut exclure les séquences qui ne sont pas NC000...
 Urgent
 * OK - Générer les umers pour chaque var
 * Faire des vrais k-mers, pas juste un print
@@ -26,10 +33,10 @@ Développer :
     INS
     DEL
     INDEL
-* OK - Log messages d'erreurs
+* Log messages d'erreurs
     Pour ne plus avoir à afficher des trucs dans la console, et garder une trace de ce qui s'est passé
 Gros truc :
-* OK - Comparer aux k-mers du génome de référence
+* Comparer aux k-mers du génome de référence
 */
 
 
@@ -221,7 +228,7 @@ int main() {
     int kmer_size = 21;
 
     // STATS
-    int selected_snps_count;
+    long selected_snps_count = 0;
     //int kmers_count;
 
     // Initialize VCF header and record
@@ -232,15 +239,23 @@ int main() {
     while (bcf_read(vcf_file, vcf_header, vcf_record) >= 0) {
         // UNPACK - MANDATORY
         //bcf_unpack(vcf_record, BCF_UN_STR);   // Pour unpack 
-        //bcf_unpack(vcf_record, BCF_UN_INFO); // Pour unpack jusqu'à INFO
+        //bcf_unpack(vcf_record, BCF_UN_INFO);  // Pour unpack jusqu'à INFO
         bcf_unpack(vcf_record, BCF_UN_ALL); // Unpack everything
 
         /////////////////////////////////////////////////////////////////////////////////////////
-        // Accessing vcf fields - 1:CHROM, 2:POS, 3:ID, 4:REF, 5;ALT, 6:QUAL, 7:FILTER, 8:INFO //
+        // Accessing VCF fields - 1:CHROM, 2:POS, 3:ID, 4:REF, 5;ALT, 6:QUAL, 7:FILTER, 8:INFO //
         /////////////////////////////////////////////////////////////////////////////////////////
         
-        // Get chromosome - (no hidden char)
+        // Get chromosome (no hidden char)
         string chromosome_name = bcf_hdr_id2name(vcf_header, vcf_record->rid);
+        // TEST EXCLUSION : NW et NT - OK, par conservation des NC uniquement.
+        // On vérifie si les séquences commencent par NC
+        if (chromosome_name.compare(0, 6, "NC_000") != 0) {
+            //cerr << "Not Primary assembly sequence : " << chromosome_name << endl;
+            //free(sequence);
+            continue;
+        }
+        // il faudrait penser à s'occuper du cas de la séquence MT
         
         // Get position
         int position = vcf_record->pos; // 1-based position in VCF
@@ -251,11 +266,18 @@ int main() {
         // Get REF (vcf_record->d.allele[0] is REF other is ALT)     
         char* ref = vcf_record->d.allele[0];
         // EXCLUSION : NT DEGEN
-        // Refaire avec une vérification sur toute la ref (certaines peuvent être longues)
-        if (isDegenerate(ref[0])){
-            cerr << "DEGEN : " << ref << " for " << rsid << " in " << chromosome_name << " at position " << position << endl;
+        bool ref_checkpoint = true;
+        for (const char* ptr = ref; *ptr !='\0'; ++ptr){
+            if (isDegenerate(*ptr)) {
+                cerr << rsid << ":\tDegenerated nucleotide found at pos "<< position+1 <<" of "<< chromosome_name << " (" << ref << ")" <<endl;
+                ref_checkpoint = false;
+                break;
+            }
+        }
+        if(!ref_checkpoint){
             continue;
         }
+        
 
         // Get ALT
         vector<string> alts(vcf_record->n_allele -1);
@@ -284,7 +306,7 @@ int main() {
             continue;
         }
 
-        // FREQ
+        // FREQ - Warning : Contains hidden characters
         bcf_info_t *info_freqs = bcf_get_info(vcf_header, vcf_record, "FREQ");
         // Get frequency project source (FREQ) - OK
         const char *freqs;
@@ -300,8 +322,23 @@ int main() {
             continue;
         }
         
+        /////////////////////
+        // AFFICHAGE INFOS ///////////////////////////////////////////////////////////////////////
+        /////////////////////
+        /*cout << "-------------------------------------" << endl;
+        // Print the data
+        cout << chromosome_name << "\t" << rsid  << "\t" << position << "\t" << ref << "\t";
+        for (int i = 0; i < alts.size(); i++){
+            if(i == alts.size()-1){
+                cout << alts[i] << endl;
+            } else {
+                cout << alts[i] << ", ";
+            }
+        }*/
+        ///////////////////////////////////////////////////////////////////////////////////////////
+
         /////////////////////////////
-        // RETRIEVE FASTA SEQUENCE // OK : PROBLEME AVEC LE NOMBRE DE STRING
+        // RETRIEVE FASTA SEQUENCE // PROBLEME AVEC LE NOMBRE DE STRING
         /////////////////////////////
 
         // Dealing with SNVs
@@ -315,20 +352,11 @@ int main() {
             return 1;
         }
 
-        // TEST EXCLUSION : NW et NT - OK, par conservation des NC uniquement.
-        // On vérifie si les séquences commencent par NC
-        if (chromosome_name.compare(0, 2, "NC") != 0) {
-            //cerr << "Not Primary assembly sequence : " << chromosome_name << endl;
-            free(sequence);
-            continue;
-        }
-        // il faudrait penser à s'occuper du cas de la séquence MT
-
         // EXCLUSION - REF != NT in the sequence
         if (ref[0] != toupper(sequence[kmer_size-1])){
             cerr << "WARNING : " << chromosome_name << " " << rsid << endl;
             cerr << "\t" << ref[0] << "\t" << sequence[kmer_size-1] << endl;
-            cerr << "\t" << ref << "\t" << sequence << endl;
+            //cerr << "\t" << ref << "\t" << sequence << endl;
             free(sequence);
             continue;
         }
@@ -340,49 +368,15 @@ int main() {
         // Si on est là, c'est qu'on a passé tous les tests
         selected_snps_count++;
 
-        /////////////////////
-        // AFFICHAGE INFOS ///////////////////////////////////////////
-        /////////////////////
-
-        /*cout << "-------------------------------------" << endl;
-        // Print the data
-        cout << chromosome_name << "\t" << rsid  << "\t" << position << "\t" << ref << "\t";
-        for (int i = 0; i < alts.size(); i++){
-            if(i == alts.size()-1){
-                cout << alts[i] << endl;
-            } else {
-                cout << alts[i] << ", ";
-            }
-        }*/
-
-        //////////
-        // FREQ //
-        //////////
-
-        //cout << '\n' << freqs << '\n' << endl;
-        //cout << displayHiddenChars(freqs) << endl;
-
-        // CREATE DBGAP FREQUENCIES VECTOR
-        //vector<float> dbgap_freqs = get_dbgap_freq(freqs);
-        /*for(int i = 0; i < dbgap_freqs.size(); i++){
-            cout << '\t' << dbgap_freqs[i] << endl;
-        }*/
-
-        // GESTION FREQ
-        // Réglé : PB : CORE DUMPED SI LA DERNIERE FREQUENCE SE TERMINE PAR "."
-        // Récupérer les différentes fréquences, sélectionner une référence, ajuster les alt
-
         // TEST GENERATION ALT_UMERS:
-        //cout << "TEST ALT UMERS" << endl;
         string umer = sequence;
-        //cout << umer << endl;
         if (umer.length() < kmer_size){
             cerr << "The length of the SNP is less than the size of the k-mers (" << kmer_size << "). Skipping this variant..." << endl;
             free(sequence);
             continue;
         }
 
-        // OK - SUPPRESSION DES ALT A FREQUENCE NULLE
+        // SUPPRESSION DES ALT A FREQUENCE NULLE
         if (alts.size() != dbgap_freqs.size()-1){
             free(sequence);
             continue;
@@ -390,7 +384,6 @@ int main() {
             for (int i=0; i < alts.size(); i++){
                 if ((dbgap_freqs[i+1]) == 0){
                     //free(sequence); // Pose problème (double free ou qqch dans le genre)
-                    //cout << "NTM" << endl;
                     continue;
                 } else {
                     string left = umer.substr(0,kmer_size-1);   //OK
@@ -450,10 +443,6 @@ int main() {
         //string sacrifice21;
         //string sacrifice22;
     }
-    //rs1352014813
-    // rs913956266
-    // rs1352014813
-    //
 
     // Close and clean up
     bcf_hdr_destroy(vcf_header);
