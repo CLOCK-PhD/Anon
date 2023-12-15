@@ -10,12 +10,9 @@ et du génome de référence HG38.
 */
 
 /* A FAIRE :
-OK - Comptage : à revoir, on vient de passer de 18 à 596M mais en gagnant 3 minutes
-Meme temps avec SNPs selected:	-1665587806 quand is_snp est utilisé, donc c'est bien la merde
-140087086844482 maintenant, ce qui n'est juste pas possible, donc on doit avoir une légère couille
-34376430793 depuis le check sur tous les éléments de la ref
-C'est réglé, il fallait juste fixer la valeur de départ à 0...
-Exclusion 
+Divers ----------------------
+* OK - Comptage
+Exclusion -------------------
 * OK - Exclure sur le nom du chromosome dès le début, vu que c'est la première info qu'on a
     => récupérer seulement les NC (primary assembly)
 * PRIO - EN COURS - Réorganiser les priorités pour les exclusions
@@ -23,10 +20,10 @@ Exclusion
 * OK - Exclure les umers de longueur < 2k-1
 * OK - Exclure les cas où REF != REF dans la séquence d'origine
 * OK - Voir si on peut exclure les séquences qui ne sont pas NC000...
-Urgent
+Urgent ----------------------
 * OK - Générer les umers pour chaque var
 * Faire des vrais k-mers, pas juste un print
-Développer :
+Développer ------------------
 * Fonctions pour gérer tous les cas des VC (voir vkg.py)
     OK - SNV (c'est le cas le plus simple donc bon...)
     MNV
@@ -35,8 +32,9 @@ Développer :
     INDEL
 * Log messages d'erreurs
     Pour ne plus avoir à afficher des trucs dans la console, et garder une trace de ce qui s'est passé
-Gros truc :
-* Comparer aux k-mers du génome de référence
+Gros truc --------------------
+* Marquage des k-mers présents dans le génome de référence
+* Exclusion des k-mers identiques (ou alors marquage)
 */
 
 
@@ -248,14 +246,12 @@ int main() {
         
         // Get chromosome (no hidden char)
         string chromosome_name = bcf_hdr_id2name(vcf_header, vcf_record->rid);
-        // TEST EXCLUSION : NW et NT - OK, par conservation des NC uniquement.
-        // On vérifie si les séquences commencent par NC
+        // EXCLUSION : NW et NT
+        // On vérifie si le chromosome commencent par NC
         if (chromosome_name.compare(0, 6, "NC_000") != 0) {
             //cerr << "Not Primary assembly sequence : " << chromosome_name << endl;
-            //free(sequence);
             continue;
         }
-        // il faudrait penser à s'occuper du cas de la séquence MT
         
         // Get position
         int position = vcf_record->pos; // 1-based position in VCF
@@ -265,7 +261,7 @@ int main() {
         
         // Get REF (vcf_record->d.allele[0] is REF other is ALT)     
         char* ref = vcf_record->d.allele[0];
-        // EXCLUSION : NT DEGEN
+        // EXCLUSION : Nucléotide dégénéré
         bool ref_checkpoint = true;
         for (const char* ptr = ref; *ptr !='\0'; ++ptr){
             if (isDegenerate(*ptr)) {
@@ -278,7 +274,6 @@ int main() {
             continue;
         }
         
-
         // Get ALT
         vector<string> alts(vcf_record->n_allele -1);
         for (int i = 1; i < vcf_record->n_allele; ++i){
@@ -298,15 +293,15 @@ int main() {
 
         // VC (Variant Class)
         bcf_info_t *info_vc = bcf_get_info(vcf_header, vcf_record, "VC");
-        // Get Variant Class (VC) - Warning : Contains hiddent characters
+        // Get Variant Class (VC) - Warning: Contains hiddent characters
         string var_class = (char *)(info_vc->vptr);
         var_class = removeNonPrintableChars(var_class);
-        // EXCLUSION
+        // EXCLUSION - VARIANT CLASS
         if (var_class != "SNV"){
             continue;
         }
 
-        // FREQ - Warning : Contains hidden characters
+        // FREQ - Warning: Contains hidden characters
         bcf_info_t *info_freqs = bcf_get_info(vcf_header, vcf_record, "FREQ");
         // Get frequency project source (FREQ) - OK
         const char *freqs;
@@ -342,7 +337,7 @@ int main() {
         /////////////////////////////
 
         // Dealing with SNVs
-        int *len;   // Nécessaire pour faidx_fetch_seq; raison inconnue mais permet de fonctionner.
+        int *len;   // Mandatory to use faidx_fetch_seq()
         int start = position - (kmer_size-1);
         int end = position + (kmer_size-1);
         const char *reg = chromosome_name.c_str();
