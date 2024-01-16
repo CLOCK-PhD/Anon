@@ -11,6 +11,11 @@ Dresse un histogramme des distributions pour chaque fichier, puis pour tous les 
 """
 
 # A FAIRE
+
+# PRIO : INTEGRATION DE PYSAM POUR HTSLIB POUR BOSSER PROPREMENT SUR TOUT LE DOSSIER.
+# PRIO : INTEGRATION DE FAIDX POUR LECTURE RAPIDE DES FASTA
+# en gros, faire le truc de mon programme C++ mais ici, quand j'aurai le temps
+
 """
 * Gestion des arguments :
     - Dossier des vcf
