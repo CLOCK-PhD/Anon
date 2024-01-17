@@ -7,6 +7,8 @@ Programme de test pour générer un index de k-mer, version c++.
 Crée tous k-mers porteurs de variants possibles à partir du fichier vcf de dbSNP,
 et du génome de référence HG38.
 
+TEST PC FIXE
+
 */
 
 /* A FAIRE :
