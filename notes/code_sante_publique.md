@@ -1,6 +1,6 @@
 # Code de la santé publique
 
-Articles relatifs à la génétique issus du code de la santé publique (en date du 17/01/24)
+Articles relatifs à la génétique issus du [code de la santé publique]{https://www.legifrance.gouv.fr/codes/texte_lc/LEGITEXT000006072665/} (en date du 17/01/24)
 ## Partie Législtative
 
 ## Première partie : Protection générale de la santé
@@ -15,10 +15,7 @@ Articles relatifs à la génétique issus du code de la santé publique (en date
 
 Relatif au secret médical sur l'utilisation des données génétiques d'une personne décédée pour la prise en charge d'une autre personne.
 
-> le secret médical ne fait pas obstacle à ce que les informations concernant une personne décédée
-nécessaires à la prise en charge d'une personne susceptible de faire l'objet d'un examen des caractéristiques
-génétiques dans les conditions prévues au I de l'article L. 1130-4 soient délivrées au médecin assurant cette
-prise en charge, sauf volonté contraire exprimée par la personne avant son décès.
+> le secret médical ne fait pas obstacle à ce que les informations concernant une personne décédée nécessaires à la prise en charge d'une personne susceptible de faire l'objet d'un examen des caractéristiques génétiques dans les conditions prévues au I de l'article L. 1130-4 soient délivrées au médecin assurant cette prise en charge, sauf volonté contraire exprimée par la personne avant son décès.
 
 ##### Chapitre premier : Information des usagers du système de santé et expression de leur volonté
 
@@ -37,8 +34,7 @@ prise en charge, sauf volonté contraire exprimée par la personne avant son dé
 La recherche sur une personne non consentante est punie de 3 ans de prison et 45000€ d'amende.
 Cependant :
 
-> Les dispositions du présent article ne sont pas applicables à l'examen des caractéristiques génétiques d'une
-personne ou à son identification par ses empreintes génétiques effectués à des fins de recherche scientifique.
+> Les dispositions du présent article ne sont pas applicables à l'examen des caractéristiques génétiques d'une personne ou à son identification par ses empreintes génétiques effectués à des fins de recherche scientifique.
 
 #### Titre III : Examen des caractérisitiques génétiques, identification par empreintes génétiques et profession de conseiller en génétique.
 
@@ -56,8 +52,7 @@ Examen des caractéristiques génétiques **constitutionnelles**
 
 Examen des caractéristiques génétiques **somatiques**
 
-> L'examen des caractéristiques génétiques somatiques consiste à rechercher et à analyser les caractéristiques génétiques dont le caractère hérité ou transmissible est en première intention inconnu. Lorsque les résultats des examens des caractéristiques génétiques somatiques sont susceptibles de révéler des caractéristiques mentionnées à l'article L. 1130-1 ou rendent nécessaire la réalisation d'examens mentionnés au même article, la personne est invitée à se rendre à une consultation chez un médecin qualifié en génétique pour une prise en charge réalisée dans les conditions fixées au chapitre Ier du présent titre. La personne est informée de
-la possibilité d'une telle orientation avant la réalisation d'un examen destiné à analyser ses caractéristiques génétiques somatiques et susceptible de révéler des caractéristiques génétiques constitutionnelles.
+> L'examen des caractéristiques génétiques somatiques consiste à rechercher et à analyser les caractéristiques génétiques dont le caractère hérité ou transmissible est en première intention inconnu. Lorsque les résultats des examens des caractéristiques génétiques somatiques sont susceptibles de révéler des caractéristiques mentionnées à l'article L. 1130-1 ou rendent nécessaire la réalisation d'examens mentionnés au même article, la personne est invitée à se rendre à une consultation chez un médecin qualifié en génétique pour une prise en charge réalisée dans les conditions fixées au chapitre Ier du présent titre. La personne est informée de la possibilité d'une telle orientation avant la réalisation d'un examen destiné à analyser ses caractéristiques génétiques somatiques et susceptible de révéler des caractéristiques génétiques constitutionnelles.
 
 ###### Article L1130-3
 
@@ -87,13 +82,11 @@ Sur l'utilisation des prélévèments à des fins de recherches mais réalisé p
 
 Conditions d'exclusion :
 
-> IV.-Le présent article n'est pas applicable aux recherches dont la publication des résultats est susceptible de
-permettre la levée de l'anonymat des personnes concernées.
+> IV.-Le présent article n'est pas applicable aux recherches dont la publication des résultats est susceptible de permettre la levée de l'anonymat des personnes concernées.
 
 ###### Article 1130-6
 
-> II.-Un arrêté du ministre chargé de la santé pris sur proposition de l'Agence de la biomédecine fixe les critères déterminant les situations médicales justifiant, chez une personne hors d'état d'exprimer sa volonté
-ou décédée, la réalisation d'un examen de ses caractéristiques génétiques à des fins médicales dans l'intérêt des membres de sa famille potentiellement concernés.
+> II.-Un arrêté du ministre chargé de la santé pris sur proposition de l'Agence de la biomédecine fixe les critères déterminant les situations médicales justifiant, chez une personne hors d'état d'exprimer sa volonté ou décédée, la réalisation d'un examen de ses caractéristiques génétiques à des fins médicales dans l'intérêt des membres de sa famille potentiellement concernés.
 
 
 ##### Chapitre Ier : Modalités de mise en œuvre des examens des caractéristiques génétiques et des identifications par empreintes génétiques et information de la parentèle
@@ -119,8 +112,7 @@ génétique, ou de soins, le médecin prescripteur saisit le responsable du cent
 
 Sur la marche à suivre en cas de diagnostic chez un donneur de gamète et comment l'informer.
 
-> II.-Lorsqu'est diagnostiquée chez une personne issue d'un don de gamètes ou d'un accueil d'embryon une anomalie génétique pouvant être responsable d'une affection grave justifiant de mesures de prévention, y
-compris de conseil génétique, ou de soins, le médecin prescripteur saisit le responsable du centre d'assistance médicale à la procréation afin qu'il procède à l'information du tiers donneur dans les conditions prévues au II
+> II.-Lorsqu'est diagnostiquée chez une personne issue d'un don de gamètes ou d'un accueil d'embryon une anomalie génétique pouvant être responsable d'une affection grave justifiant de mesures de prévention, y compris de conseil génétique, ou de soins, le médecin prescripteur saisit le responsable du centre d'assistance médicale à la procréation afin qu'il procède à l'information du tiers donneur dans les conditions prévues au II
 de l'article L. 1131-1.
 
 ###### Article L1131-1-2
@@ -145,9 +137,7 @@ La suite concerne l'analyse par des labos en Europe.
 
 Sur les personnes habilitées à réaliser les examens.
 
-> [...] sont seuls habilités à procéder à des
-examens des caractéristiques génétiques d'une personne ou à son identification par empreintes génétiques à
-des fins médicales les praticiens agréés à cet effet par l'Agence de la biomédecine [...]
+> [...] sont seuls habilités à procéder à des examens des caractéristiques génétiques d'une personne ou à son identification par empreintes génétiques à des fins médicales les praticiens agréés à cet effet par l'Agence de la biomédecine [...]
 
 ###### Article L1131-4
 
@@ -180,8 +170,7 @@ Sur les conditions de présecription et réalisation des examens génétiques à
 
 À propos du conseiller en génétique
 
-> Le conseiller en génétique, sous la responsabilité d'un médecin qualifié en génétique, participe au sein d'une
-équipe pluridisciplinaire :
+> Le conseiller en génétique, sous la responsabilité d'un médecin qualifié en génétique, participe au sein d'une équipe pluridisciplinaire :
 1° A la délivrance des informations et conseils aux personnes et à leurs familles susceptibles de faire l'objet ou ayant fait l'objet d'un examen des caractéristiques génétiques à des fins médicales défini à l'article L. 1131-1, ou d'une analyse aux fins du diagnostic prénatal défini à l'article L. 2131-1 ;
 2° A la prise en charge médico-sociale, psychologique et au suivi des personnes pour lesquelles cet examen ou cette analyse est préconisé ou réalisé.
 
@@ -196,8 +185,7 @@ Les punitions pour le mésusage des données de santé et les données génétiq
 Détournement de la finalité médicale des données : 1an+15k
 
 > Comme il est dit à l'article 226-26 du code pénal ci-après reproduit :
-" Le fait de détourner de leurs finalités médicales ou de recherche scientifique les informations recueillies sur une personne au moyen de l'examen de ses caractéristiques génétiques est puni d'un an d'emprisonnement et
-de 15 000 euros d'amende. "
+" Le fait de détourner de leurs finalités médicales ou de recherche scientifique les informations recueillies sur une personne au moyen de l'examen de ses caractéristiques génétiques est puni d'un an d'emprisonnement et de 15 000 euros d'amende. "
 
 ###### Article L1133-3
 Réidentification sans consentement : 1an+15k
@@ -236,8 +224,7 @@ Conservation et transformation d'organes/tissus/etc. à des fin scientifiques : 
 Art. 511-5-2.-I.-Est puni de cinq ans d'emprisonnement et de 75 000 euros d'amende le fait de conserver et transformer à des fins scientifiques, y compris à des fins de recherche génétique, des organes, des tissus, des cellules ou du sang, ses composants et ses produits dérivés :
 1° Sans en avoir fait la déclaration préalable prévue à l'article L. 1243-3 du code de la santé publique ;
 2° Alors que le ministre chargé de la recherche s'est opposé à l'exercice de ces activités ou les a suspendues ou interdites.
-II.-Est puni des mêmes peines le fait de conserver et transformer, en vue de leur cession pour un usage
-scientifique, y compris à des fins de recherche génétique, des organes, des tissus, des cellules ou du sang, ses composants et ses produits dérivés sans avoir préalablement obtenu l'autorisation prévue à l'article L.1243-4 du code de la santé publique ou alors que cette autorisation est suspendue ou retirée.
+II.-Est puni des mêmes peines le fait de conserver et transformer, en vue de leur cession pour un usage scientifique, y compris à des fins de recherche génétique, des organes, des tissus, des cellules ou du sang, ses composants et ses produits dérivés sans avoir préalablement obtenu l'autorisation prévue à l'article L.1243-4 du code de la santé publique ou alors que cette autorisation est suspendue ou retirée.
 
 ### Livre IV : Protection générale de la santé
 
@@ -315,11 +302,7 @@ Cet examen a pour objet :
 1° Soit de poser, de confirmer ou d'infirmer le diagnostic d'une maladie à caractère génétique chez une personne ;
 2° Soit de rechercher les caractéristiques d'un ou plusieurs gènes susceptibles d'être à l'origine du développement d'une maladie chez une personne ou les membres de sa famille potentiellement concernés ;
 3° Soit d'adapter la prise en charge médicale d'une personne selon ses caractéristiques génétiques.
-Les dispositions de la présente section s'appliquent à l'examen des caractéristiques génétiques
-constitutionnelles tel que défini à l'article L. 1130-1. Sauf dispositions spécifiques et hormis les cas où il est
-susceptible de révéler des caractéristiques génétiques constitutionnelles ou rend nécessaire un examen de ces
-dernières, la présente section ne s'applique pas à l'examen des caractéristiques génétiques somatiques défini à
-l'article L. 1130-2.
+Les dispositions de la présente section s'appliquent à l'examen des caractéristiques génétiques constitutionnelles tel que défini à l'article L. 1130-1. Sauf dispositions spécifiques et hormis les cas où il est susceptible de révéler des caractéristiques génétiques constitutionnelles ou rend nécessaire un examen de ces dernières, la présente section ne s'applique pas à l'examen des caractéristiques génétiques somatiques défini à l'article L. 1130-2.
 
 ###### Article R1131-4
 
@@ -330,8 +313,7 @@ Information de la personne avant l'examen, volonté d'être tenue dans l'ignoran
 2° Des modalités de transmission génétique de la maladie recherchée lorsqu'elles sont connues et de leurs possibles conséquences chez d'autres membres de sa famille ;
 3° Le cas échéant, si elle y consent, que l'examen peut révéler incidemment des caractéristiques génétiques sans relation avec son indication initiale mais dont la connaissance permettrait à la personne ou aux membres de sa famille de bénéficier de mesures de prévention, y compris de conseil en génétique, ou de soins.
 Les informations mentionnées aux 1° et au 2° sont portées à la connaissance de la personne de confiance, de
-la famille, d'un proche ou de la personne chargée d'une mesure de protection juridique avec représentation
-relative à la personne lorsque ces personnes sont consultées en application du deuxième alinéa de l'article L.1130-3 ou du deuxième alinéa de l'article L.1130-4.
+la famille, d'un proche ou de la personne chargée d'une mesure de protection juridique avec représentation relative à la personne lorsque ces personnes sont consultées en application du deuxième alinéa de l'article L.1130-3 ou du deuxième alinéa de l'article L.1130-4.
 Lorsque la personne intéressée est un mineur ou une personne majeure faisant l'objet d'une mesure de protection juridique avec représentation relative à la personne, le consentement est donné par les titulaires de l'autorité parentale ou le représentant légal. En outre, le consentement du mineur ou du majeur protégé est systématiquement recherché s'il est apte à exprimer sa volonté et à participer à la décision.
 
 ###### Article R1131-4-2
@@ -352,13 +334,10 @@ Sur la prescription d'un examen génétique à une personne asymptomatique
 > Un examen des caractéristiques génétiques peut être prescrit à une personne asymptomatique :
 1° Qui présente des antécédents familiaux ;
 2° Qui partage un projet parental avec une personne porteuse d'une anomalie génétique pouvant être responsable d'une affection grave, et dont les gamètes sont susceptibles d'être utilisés dans le cadre de ce projet ;
-3° Qui fait don de ses gamètes à un bénéficiaire d'une assistance médicale à la procréation porteur d'une anomalie génétique pouvant être responsable d'une affection grave dans les conditions fixées à l'article R.
-1211-28-1 ;
+3° Qui fait don de ses gamètes à un bénéficiaire d'une assistance médicale à la procréation porteur d'une anomalie génétique pouvant être responsable d'une affection grave dans les conditions fixées à l'article R.1211-28-1 ;
 4° Aux fins de confirmer un résultat obtenu dans le cadre d'un examen de ses caractéristiques génétiques somatiques ou d'un examen réalisé à des fins de recherche scientifique ;
 5° Qui fait don de ses organes, tissus ou cellules en application des articles L. 1231-1 et L. 1241-1, conformément aux règles de bonnes pratiques mentionnées à l'article R. 1131-3, dans son intérêt lorsqu'elle présente un facteur de risque contre-indiquant le don ou dans l'intérêt du receveur.
-Pour un patient présentant un symptôme d'une maladie génétique comme pour une personne
-asymptomatique, la prescription d'un examen des caractéristiques génétiques ne peut avoir lieu que dans
-le cadre d'une consultation médicale individuelle. Cette consultation est effectuée par un médecin œuvrant au sein d'une équipe pluridisciplinaire rassemblant des compétences cliniques et génétiques mentionnée au 4° de l'article R. 1131-3. Cette équipe se dote d'un protocole type de prise en charge et se déclare auprès de l'Agence de la biomédecine selon des modalités fixées par décision du directeur général de l'agence.
+Pour un patient présentant un symptôme d'une maladie génétique comme pour une personne asymptomatique, la prescription d'un examen des caractéristiques génétiques ne peut avoir lieu que dans le cadre d'une consultation médicale individuelle. Cette consultation est effectuée par un médecin œuvrant au sein d'une équipe pluridisciplinaire rassemblant des compétences cliniques et génétiques mentionnée au 4° de l'article R. 1131-3. Cette équipe se dote d'un protocole type de prise en charge et se déclare auprès de l'Agence de la biomédecine selon des modalités fixées par décision du directeur général de l'agence.
 Les examens ne peuvent être prescrits chez un mineur ou chez un une personne majeure faisant l'objet d'une mesure de protection juridique avec représentation relative à la personne que si celui-ci ou sa famille peuvent personnellement bénéficier de mesures préventives ou curatives immédiates.
 La prescription des examens des varactéristiques génétiques peut être assurée, conformément au troisième alinéa de l'article L. 1132-1 et dans les conditions prévues par l'article R. 1132-5, par un conseiller en génétique.
 
@@ -377,20 +356,14 @@ Lorsque la personne ne souhaite pas informer elle-même les membres de sa famill
 
 Sur l'attitude à adopter par le médecin ayant reçu la lettre d'information d'une personne apparentée qui a des anomalies génétiques.
 
-> Le médecin consulté par la personne apparentée ayant reçu la lettre d'information médicale à caractère
-familial mentionnée au quatrième alinéa de l'article L. 1131-1 se rapproche du prescripteur qui a adressé
-cette lettre pour obtenir l'information relative à l'anomalie génétique en cause.
-Le prescripteur ne transmet que l'information relative à l'anomalie génétique en cause, à l'exclusion de
-toute autre information couverte par le secret médical, et notamment de l'identité de la personne chez qui
-l'anomalie génétique pouvant être responsable d'une affection grave justifiant de mesures de prévention et de
-soins a été diagnostiquée.
+> Le médecin consulté par la personne apparentée ayant reçu la lettre d'information médicale à caractère familial mentionnée au quatrième alinéa de l'article L. 1131-1 se rapproche du prescripteur qui a adressé cette lettre pour obtenir l'information relative à l'anomalie génétique en cause.
+Le prescripteur ne transmet que l'information relative à l'anomalie génétique en cause, à l'exclusion de toute autre information couverte par le secret médical, et notamment de l'identité de la personne chez qui l'anomalie génétique pouvant être responsable d'une affection grave justifiant de mesures de prévention et de soins a été diagnostiquée.
 
 ###### Section 2 : Dépistage des maladies néonatales
 
 ###### Article R1131-21
 
-> Conformément à l'article L. 1411-6-1, le dépistage néonatal est une intervention de santé publique visant à détecter dès la naissance certaines maladies rares, souvent d'origine génétique, afin de mettre en œuvre
-à un stade précoce, avant l'apparition de symptômes, des mesures appropriées pour éviter ou limiter les conséquences négatives de ces maladies sur la santé de l'enfant.
+> Conformément à l'article L. 1411-6-1, le dépistage néonatal est une intervention de santé publique visant à détecter dès la naissance certaines maladies rares, souvent d'origine génétique, afin de mettre en œuvre à un stade précoce, avant l'apparition de symptômes, des mesures appropriées pour éviter ou limiter les conséquences négatives de ces maladies sur la santé de l'enfant.
 Les dispositions du présent chapitre  s'appliquent à l'examen des caractéristiques génétiques du nouveau-né réalisé dans le cadre du dépistage néonatal, sous réserve des adaptations prévues à la présente section.
 
 L'article suivant contient beaucoup d'informations et pourrait être intéressant si on voulait creuser plus, ce qui n'est pas le cas.
@@ -408,8 +381,7 @@ Elle est, le cas échéant, adaptée au niveau de compréhension d'une personne 
 
 Sur le descriptif des recherches menées et leur but, à fournir à la personne.
 
-> L'information délivrée comporte un descriptif du programme de recherche nécessitant l'examen des caractéristiques génétiques constitutionnelles, qui permet la bonne compréhension de la nécessité de recourir
-à ce type d'examen dans le cadre du programme de recherche.
+> L'information délivrée comporte un descriptif du programme de recherche nécessitant l'examen des caractéristiques génétiques constitutionnelles, qui permet la bonne compréhension de la nécessité de recourir à ce type d'examen dans le cadre du programme de recherche.
 Le descriptif précise notamment la thématique, le contexte et les objectifs du programme de recherche, en quoi consiste un tel examen et le type d'information génétique susceptible d'en résulter.
 Si l'organisme au sein duquel la recherche est envisagée n'a pas défini de programme de recherche, le descriptif porte sur le projet de recherche concerné.
 
@@ -417,10 +389,8 @@ Si l'organisme au sein duquel la recherche est envisagée n'a pas défini de pro
 
 Droit d'opposition
 
-> L'information mentionnée à l'article D. 1131-22-2 précise que les éléments du corps de la personne sont
-utilisés dans le cadre du programme de recherche décrit sauf opposition de sa part.
-Elle précise que la personne peut s'opposer, par tout moyen oral ou écrit et à tout moment, à l'utilisation
-décrite tant qu'il n'y a pas eu d'intervention sur l'élément concerné dans le cadre de la recherche.
+> L'information mentionnée à l'article D. 1131-22-2 précise que les éléments du corps de la personne sont utilisés dans le cadre du programme de recherche décrit sauf opposition de sa part.
+Elle précise que la personne peut s'opposer, par tout moyen oral ou écrit et à tout moment, à l'utilisation décrite tant qu'il n'y a pas eu d'intervention sur l'élément concerné dans le cadre de la recherche.
 Elle indique la démarche à effectuer et la personne à contacter pour exprimer, le cas échéant, une opposition.
 
 ###### Article D1131-22-4
@@ -435,8 +405,6 @@ La personne est informée qu'elle peut s'opposer, par tout moyen oral ou écrit 
 Sur l'extension à la génétique fonctionelle des recherches.
 
 > S'il est nécessaire de réaliser un examen des caractéristiques génétiques constitutionnelles, pour les besoins d'un programme de recherche, alors que seule une information générale sur l'utilisation à des fins scientifiques des éléments de son corps a été délivrée à la personne conformément à l'article L. 1211-2, l'information est complétée conformément aux dispositions de la présente section.
-
-
 
 ### Articles importants
 
