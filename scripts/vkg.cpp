@@ -95,7 +95,7 @@ bool isDegenerate(char base) {
             base == 'M' || base == 'B' || base == 'D' || base == 'H' || base == 'V' || base == 'N');
 }
 
-void kmer_generator(string umer, int k){
+void kmer_generator(const string &umer, int k){
     // Generate k-mers from a u-mer, given a k-mer size k
     int uLength = umer.length();
     int i = 0; // compteur pour la boucle
@@ -119,10 +119,10 @@ void kmer_generator(string umer, int k){
         for (char& c : kmer) {
             c = std::toupper(c);
         }
-        //std::cout << "K-mer " << i + 1 << ":\t" << kmer << std::endl;
+        std::cout << "K-mer " << i + 1 << ":\t" << kmer << std::endl;
         i++;        
     }
-    //cout << "K-mers generated: " << kmer_count << endl;
+    cout << "K-mers generated: " << kmer_count << endl;
 
 }
 
@@ -146,7 +146,7 @@ std::vector<std::string> split(const std::string &s, char delimiter) {
     return tokens;
 }
 
-bool check_source(char* my_source, const std::string input){
+bool check_source(char* my_source, const std::string &input){
 
     // Ne fonctionne pas à cause du problème des strings
 
@@ -155,7 +155,7 @@ bool check_source(char* my_source, const std::string input){
     std::vector<std::string> tokens = split(input, delimiter);
     std::vector<float> dbgap_freq;
 
-    for (int i=0; i < tokens.size(); i++){
+    for (size_t i=0; i < tokens.size(); i++){
         std::vector<std::string> subtokens = split(tokens[i], ':');
         std::string sourcename = subtokens[0];
         if (sourcename == my_source){
@@ -165,7 +165,8 @@ bool check_source(char* my_source, const std::string input){
     return false;
 }
 
-std::vector<float> get_dbgap_freq(const std::string input){
+
+std::vector<float> get_dbgap_freq(const std::string &input){
     // Return a vector containing the frequencies of dbGaP_PopFreq
 
     char delimiter = '|'; // Split each source and its frequencies from the others
@@ -173,7 +174,7 @@ std::vector<float> get_dbgap_freq(const std::string input){
     std::vector<std::string> tokens = split(input, delimiter);
     std::vector<float> dbgap_freq;
 
-    for (int i=0; i < tokens.size(); i++){
+    for (size_t i=0; i < tokens.size(); i++){
         std::vector<std::string> subtokens = split(tokens[i], ':');
         std::string sourcename = subtokens[0];
         std::string allele_frequencies = subtokens[1];
@@ -182,7 +183,7 @@ std::vector<float> get_dbgap_freq(const std::string input){
         }
         else{
             std::vector<std::string> frequencies = split(allele_frequencies, ',');
-            for(int j=0; j < frequencies.size(); j++){
+            for(size_t j=0; j < frequencies.size(); j++){
                 if (removeNonPrintableChars(frequencies[j]) == "."){
                     dbgap_freq.push_back(0.0);
                 }
@@ -204,7 +205,7 @@ int main() {
     // OPENING FILES /////////////////////////////////////////////////////////////////////
     ///////////////////
 
-    char* source_name = "dbGaP_PopFreq";
+    // const char* source_name = "dbGaP_PopFreq";
 
     // OPENING FASTA FILE - OK
     const char* fasta_file_path = "/home/remycosta/phd/Anon/data/grch38p14/GCF_000001405.40_GRCh38.p14_genomic.fna";
@@ -225,7 +226,7 @@ int main() {
     //INITIALIZING VARIABLES ///////////////////////////////////////////////////////////////
     ///////////////////////////
 
-    int kmer_size = 21;
+    size_t kmer_size = 21;
 
     // STATS
     long selected_snps_count = 0;
@@ -312,8 +313,6 @@ int main() {
         }
         // CREATE DBGAP FREQUENCIES VECTOR
         vector<float> dbgap_freqs = get_dbgap_freq(freqs);
-        for(int i = 0; i < dbgap_freqs.size(); i++){
-        }
         if (dbgap_freqs.size() == 0){
             //cerr << rsid << ": no dbGaP_PopFreq" << endl;
             continue;
@@ -322,7 +321,7 @@ int main() {
         /////////////////////
         // AFFICHAGE INFOS ///////////////////////////////////////////////////////////////////////
         /////////////////////
-        /*cout << "-------------------------------------" << endl;
+        /* cout << "-------------------------------------" << endl;
         // Print the data
         cout << chromosome_name << "\t" << rsid  << "\t" << position << "\t" << ref << "\t";
         for (int i = 0; i < alts.size(); i++){
@@ -339,22 +338,37 @@ int main() {
         /////////////////////////////
 
         // Dealing with SNVs
-        int *len;   // Mandatory to use faidx_fetch_seq()
+        int len;   // Mandatory to use faidx_fetch_seq()
         int start = position - (kmer_size-1);
         int end = position + (kmer_size-1);
         const char *reg = chromosome_name.c_str();
-        char *sequence = faidx_fetch_seq(fai, reg, start, end, len);
-        if(!sequence){
-            cerr << "Error: Could not fetch the sequence" << endl;
-            return 1;
+        char *s = faidx_fetch_seq(fai, reg, start, end, &len);
+        if(!s){
+            cerr << "WARNING: Could not fetch the sequence" << endl;
+            continue;
+        }
+        string umer = s;
+        free(s);
+        switch (len) {
+            case 1:
+                cerr << "WARNING: unable to retrieve the sequence corresponding to chromosome "
+                     << reg << " between " << start << " and " << end << " positions" << endl;
+                break;
+            case 2:
+                cerr << "WARNING: invalid chromosome name (sequence not found)" << endl;
+                break;
+            default:
+                len = 0;
+        }
+        if (len) {
+            continue;
         }
 
         // EXCLUSION - REF != NT in the sequence
-        if (ref[0] != toupper(sequence[kmer_size-1])){
+        if (ref[0] != toupper(umer[kmer_size-1])){
             cerr << "WARNING : " << chromosome_name << " " << rsid << endl;
-            cerr << "\t" << ref[0] << "\t" << sequence[kmer_size-1] << endl;
+            cerr << "\t" << ref[0] << "\t" << umer[kmer_size-1] << endl;
             //cerr << "\t" << ref << "\t" << sequence << endl;
-            free(sequence);
             continue;
         }
 
@@ -366,21 +380,20 @@ int main() {
         selected_snps_count++;
 
         // TEST GENERATION ALT_UMERS:
-        string umer = sequence;
         if (umer.length() < kmer_size){
             cerr << "The length of the SNP is less than the size of the k-mers (" << kmer_size << "). Skipping this variant..." << endl;
-            free(sequence);
             continue;
         }
 
         // SUPPRESSION DES ALT A FREQUENCE NULLE
-        if (alts.size() != dbgap_freqs.size()-1){
-            free(sequence);
+        // Lorsque l'on veut comparer deux entiers non signés A et B à 1 près (typiquement si A == B - 1),
+        // il faut préférer comparer A + 1 == B car 0 - 1 n'est pas possible pour un entier non signé et
+        // vaut le plus grand entier possible.
+        if (alts.size() + 1 != dbgap_freqs.size()){
             continue;
         } else {
-            for (int i=0; i < alts.size(); i++){
+            for (size_t i=0; i < alts.size(); i++){
                 if ((dbgap_freqs[i+1]) == 0){
-                    //free(sequence); // Pose problème (double free ou qqch dans le genre)
                     continue;
                 } else {
                     string left = umer.substr(0,kmer_size-1);   //OK
@@ -401,44 +414,6 @@ int main() {
         //cout << umer << endl;
         //kmer_generator(umer, kmer_size);
 
-        // Free memory space
-        free(sequence);
-
-        /* STRINGS SACRIFIABLES
-        Pour une raison que j'ignore, le nombre de strings dans le programme entraine un core dumped.
-        Cela peut arriver si on ajoute un string ou un char* (moins fréquent), ou parfois qu'on en enlève.
-        Certaines conditions nécessitent plusieurs sacrifices.
-        Une "solution" pour contourner le problème est :
-        - mettre une partie du code en commentaire (lecture de fasta, en général)
-        - compiler
-        - ajouter des strings, compiler
-        - Décommenter
-        - Compiler
-        - Quand on rencontre un problème : on sacrifie une string du stock
-        - Quand on arrive au bout : on recommence.
-        */
-        string sacrifice1;    
-        string sacrifice2;    
-        string sacrifice3;    
-        string sacrifice4;   
-        string sacrifice5;   
-        string sacrifice6;
-        string sacrifice7;
-        string sacrifice8;
-        string sacrifice9;
-        string sacrifice10;
-        string sacrifice11;
-        string sacrifice12;
-        string sacrifice13; // FREQ affichage : sacrifice 1, mais affiche la première ligne avant le core dumped
-        string sacrifice14; // Là j'ai dû la rajouter quand j'ai supprimé une autre string;
-        string sacrifice15;
-        string sacrifice16;
-        string sacrifice17;
-        //string sacrifice18;
-        //string sacrifice19;
-        //string sacrifice20;
-        //string sacrifice21;
-        //string sacrifice22;
     }
 
     // Close and clean up
