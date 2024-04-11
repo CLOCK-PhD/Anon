@@ -289,7 +289,7 @@ int main() {
 
         // COMMON
         bcf_info_t *info_common = bcf_get_info(vcf_header, vcf_record, "COMMON");
-        // EXCLUSION
+        // EXCLUSION - COMMON
         if(!info_common){
             continue;
         }
@@ -321,16 +321,16 @@ int main() {
         /////////////////////
         // AFFICHAGE INFOS ///////////////////////////////////////////////////////////////////////
         /////////////////////
-        /* cout << "-------------------------------------" << endl;
+        cout << "-------------------------------------" << endl;
         // Print the data
         cout << chromosome_name << "\t" << rsid  << "\t" << position << "\t" << ref << "\t";
-        for (int i = 0; i < alts.size(); i++){
+        for (size_t i = 0; i < alts.size(); i++){
             if(i == alts.size()-1){
                 cout << alts[i] << endl;
             } else {
                 cout << alts[i] << ", ";
             }
-        }*/
+        }
         ///////////////////////////////////////////////////////////////////////////////////////////
 
         /////////////////////////////
@@ -338,6 +338,7 @@ int main() {
         /////////////////////////////
 
         // Dealing with SNVs
+        // Get sequence from fasta file
         int len;   // Mandatory to use faidx_fetch_seq()
         int start = position - (kmer_size-1);
         int end = position + (kmer_size-1);
@@ -407,12 +408,6 @@ int main() {
                 }
             }
         }
-
-
-        // TEST KMER_GENERATOR() - OK
-        //cout << "TEST KMER_GENERATOR()" << endl;
-        //cout << umer << endl;
-        //kmer_generator(umer, kmer_size);
 
     }
 
