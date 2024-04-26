@@ -1,13 +1,7 @@
 /*
-VKG : Variant K-mer Generator
+OVKG : Object Variant K-mer Generator
 
-Programme de test pour générer un index de k-mer, version c++.
-(Version Python : ksv.py)
-
-Crée tous k-mers porteurs de variants possibles à partir du fichier vcf de dbSNP,
-et du génome de référence HG38.
-
-TEST PC FIXE
+Programme pour extraire les SNV COMMON du vcf de dbSNP et générer les k-mers porteurs de variant correspondants.
 
 */
 
@@ -17,14 +11,14 @@ Divers ----------------------
 Exclusion -------------------
 * OK - Exclure sur le nom du chromosome dès le début, vu que c'est la première info qu'on a
     => récupérer seulement les NC (primary assembly)
-* PRIO - EN COURS - Réorganiser les priorités pour les exclusions
+* OK - Réorganiser les priorités pour les exclusions
 * OK - Exclure les SNP qui ont REF=N
 * OK - Exclure les umers de longueur < 2k-1
 * OK - Exclure les cas où REF != REF dans la séquence d'origine
 * OK - Voir si on peut exclure les séquences qui ne sont pas NC000...
 Urgent ----------------------
 * OK - Générer les umers pour chaque var
-* Faire des vrais k-mers, pas juste un print
+* OK - Faire des vrais k-mers, pas juste un print
 Développer ------------------
 * Fonctions pour gérer tous les cas des VC (voir vkg.py)
     OK - SNV (c'est le cas le plus simple donc bon...)
@@ -36,7 +30,7 @@ Développer ------------------
     Pour ne plus avoir à afficher des trucs dans la console, et garder une trace de ce qui s'est passé
 Gros truc --------------------
 * Marquage des k-mers présents dans le génome de référence
-* Exclusion des k-mers identiques (ou alors marquage)
+* Exclusion des k-mers identiques (ou alors marquage) - géré par kim ?
 */
 
 
@@ -56,7 +50,50 @@ Gros truc --------------------
 
 using namespace std;
 
-// TEST REMOVE HIDDEN CHAR - OK ---------------------------------------------------
+class Kmer{
+    public:
+        string sequence;
+        string chromosome;
+        string rsid;
+        int kmer_start;
+        int kmer_end;
+        int snp_position_genome;
+        int snp_position_kmer;
+        char ref_allele;
+        std::string alt_allele;
+        float reference_allele_frequency;
+        float alternative_allele_frequency;
+
+        // CONSTRUCTOR
+        Kmer(string seq, string chrom, string id, int start, int end, int snp_gen_pos, int snp_kmer_pos, char ref, std::string alt, float ref_freq, float alt_freq)
+            :sequence(seq), 
+            chromosome(chrom), 
+            rsid(id), 
+            kmer_start(start), 
+            kmer_end(end),
+            snp_position_genome(snp_gen_pos), 
+            snp_position_kmer(snp_kmer_pos),
+            ref_allele(ref),
+            alt_allele(alt),
+            reference_allele_frequency(ref_freq),
+            alternative_allele_frequency(alt_freq)
+        {}
+
+        // Display k-mer information
+        void display(){
+            cout << "K-mer sequence: " << sequence << "\n"
+                << chromosome << "\t"
+                << kmer_start << "\t" 
+                << kmer_end << "\n"
+                << rsid << "\t"
+                << "REF: " << ref_allele << " (" << reference_allele_frequency << ")" << "\t"
+                << "ALT: " << alt_allele << " (" << alternative_allele_frequency <<")" <<"\n"
+                << "SNP Position in Genome:\t" << snp_position_genome << "\n"
+                << "SNP Position in K-mer:\t" << snp_position_kmer << "\n"
+                << std::endl;
+        };
+};
+
 bool isPrintable(char c) {
     // Check if the character is a printable ASCII character
     return (c >= 32 && c <= 126);
@@ -86,9 +123,8 @@ std::string displayHiddenChars(const std::string& input) {
     }
     return result;
 }
-// FIN TEST REMOVE HIDDEN CHAR - OK ------------------------------------------------
 
-//  FONCTIONS ----------------------------------------------------------------------
+//  FUNCTIONS ----------------------------------------------------------------------
 bool isDegenerate(char base) {
     // Define a function to check if a base is degenerated
     return (base == 'R' || base == 'Y' || base == 'S' || base == 'W' || base == 'K' ||
@@ -124,6 +160,49 @@ void kmer_generator(const string &umer, int k){
     }
     cout << "K-mers generated: " << kmer_count << endl;
 
+}
+
+std::vector<Kmer> generate_kmers(const std::string &umer, int k, const std::string &chromosome, const std::string &rsid, int snp_position_genome, char ref_allele, std::string alt_allele, float ref_frequency, float alt_frequency){
+    int uLength = umer.length();
+    int i = 0;
+    std::vector<Kmer> kmer_objects;
+    int snp_position_umer = k; // SNP position in the u-mer, center position
+
+    while (i <= uLength - k){
+        bool containsDegenerate = false;
+        for(int j = i; j < i + k; j++){
+            if(isDegenerate(umer[j])){
+                containsDegenerate = true;
+                i= j + 1; // Skip to the position after the degenerate nucleotide
+                break;
+            }
+        }
+
+        if (containsDegenerate) {
+            // Skip this k-mer if it contains a degenerate nucleotide
+            continue;
+        } else {
+            // Creating k-mer and convert characters to uppercase
+            std::string kmer = umer.substr(i, k);
+            std::transform(kmer.begin(), kmer.end(), kmer.begin(),
+                            [](unsigned char c){ return std::toupper(c); });
+            // Creating the last values for the k-mer object
+            int kmer_start = snp_position_genome - snp_position_umer + i;
+            int kmer_end = kmer_start + k;
+            int snp_position_kmer = snp_position_umer - i;  // Corrected to account for SNP's relative position
+            // Creating k-mer object
+            Kmer kmer_obj(kmer, chromosome, rsid, kmer_start, kmer_end, snp_position_genome, snp_position_kmer, ref_allele, alt_allele, ref_frequency, alt_frequency);
+            kmer_objects.push_back(kmer_obj);
+        }
+        i++; // Move to the next base for the next k-mer
+    }
+
+    // Print each Kmer object in the vector
+    for (Kmer& kmer : kmer_objects) {
+        kmer.display();
+    }
+
+    return kmer_objects;
 }
 
 std::vector<std::string> split(const std::string &s, char delimiter) {
@@ -165,7 +244,6 @@ bool check_source(char* my_source, const std::string &input){
     return false;
 }
 
-
 std::vector<float> get_dbgap_freq(const std::string &input){
     // Return a vector containing the frequencies of dbGaP_PopFreq
 
@@ -197,12 +275,11 @@ std::vector<float> get_dbgap_freq(const std::string &input){
     return dbgap_freq;
 }
 
-// FIN FONCTIONS -------------------------------------------------------------------</s>
 
 int main() {
 
     ///////////////////
-    // OPENING FILES /////////////////////////////////////////////////////////////////////
+    // OPENING FILES //
     ///////////////////
 
     // const char* source_name = "dbGaP_PopFreq";
@@ -223,7 +300,7 @@ int main() {
         return 1;
     }
     ///////////////////////////
-    //INITIALIZING VARIABLES ///////////////////////////////////////////////////////////////
+    //INITIALIZING VARIABLES //
     ///////////////////////////
 
     size_t kmer_size = 21;
@@ -246,11 +323,13 @@ int main() {
         /////////////////////////////////////////////////////////////////////////////////////////
         // Accessing VCF fields - 1:CHROM, 2:POS, 3:ID, 4:REF, 5;ALT, 6:QUAL, 7:FILTER, 8:INFO //
         /////////////////////////////////////////////////////////////////////////////////////////
+        // Recap info : chromosome_name (str), position (int), rsid (char*), ref (char*),
+        // alts (vector, string),var_class (str), freqs (vector, float), umer (str), alt_umer (str)
         
         // Get chromosome (no hidden char)
         string chromosome_name = bcf_hdr_id2name(vcf_header, vcf_record->rid);
         // EXCLUSION : NW et NT
-        // On vérifie si le chromosome commencent par NC
+        // Check if chromosome begins with NC ; attention : ne prend pas l'ADNmt avec 'NC_000'
         if (chromosome_name.compare(0, 6, "NC_000") != 0) {
             //cerr << "Not Primary assembly sequence : " << chromosome_name << endl;
             continue;
@@ -264,7 +343,7 @@ int main() {
         
         // Get REF (vcf_record->d.allele[0] is REF other is ALT)     
         char* ref = vcf_record->d.allele[0];
-        // EXCLUSION : Nucléotide dégénéré
+        // EXCLUSION : Degenerated nt
         bool ref_checkpoint = true;
         for (const char* ptr = ref; *ptr !='\0'; ++ptr){
             if (isDegenerate(*ptr)) {
@@ -296,7 +375,7 @@ int main() {
 
         // VC (Variant Class)
         bcf_info_t *info_vc = bcf_get_info(vcf_header, vcf_record, "VC");
-        // Get Variant Class (VC) - Warning: Contains hiddent characters
+        // Get Variant Class (VC) - Warning: Contains hidden characters
         string var_class = (char *)(info_vc->vptr);
         var_class = removeNonPrintableChars(var_class);
         // EXCLUSION - VARIANT CLASS
@@ -306,7 +385,7 @@ int main() {
 
         // FREQ - Warning: Contains hidden characters
         bcf_info_t *info_freqs = bcf_get_info(vcf_header, vcf_record, "FREQ");
-        // Get frequency project source (FREQ) - OK
+        // Get frequency project source (FREQ)
         const char *freqs;
         if (info_freqs && info_freqs->type == BCF_BT_CHAR){
             freqs = (char*)(info_freqs->vptr);
@@ -319,9 +398,9 @@ int main() {
         }
         
         /////////////////////
-        // AFFICHAGE INFOS ///////////////////////////////////////////////////////////////////////
+        // AFFICHAGE INFOS //
         /////////////////////
-        cout << "-------------------------------------" << endl;
+        /*cout << "-------------------------------------" << endl;
         // Print the data
         cout << chromosome_name << "\t" << rsid  << "\t" << position << "\t" << ref << "\t";
         for (size_t i = 0; i < alts.size(); i++){
@@ -330,11 +409,10 @@ int main() {
             } else {
                 cout << alts[i] << ", ";
             }
-        }
-        ///////////////////////////////////////////////////////////////////////////////////////////
+        }*/
 
         /////////////////////////////
-        // RETRIEVE FASTA SEQUENCE // PROBLEME AVEC LE NOMBRE DE STRING
+        // RETRIEVE FASTA SEQUENCE //
         /////////////////////////////
 
         // Dealing with SNVs
@@ -395,16 +473,14 @@ int main() {
         } else {
             for (size_t i=0; i < alts.size(); i++){
                 if ((dbgap_freqs[i+1]) == 0){
+                    cout << alts[i] << " has a null frequency. Skipping..." << endl;
                     continue;
                 } else {
-                    string left = umer.substr(0,kmer_size-1);   //OK
-                    string right = umer.substr(kmer_size);      //OK
-                    //cout << left << "X" << right << endl;
-                    //cout << left << alts[i] << right << endl;
+                    string left = umer.substr(0,kmer_size-1);
+                    string right = umer.substr(kmer_size);
                     string alt_umer = left + alts[i] + right;
-                    //cout << alt_umer << endl;
-                    //cout << "K-mers for " << ref << "->" << alts[i] << ":" << endl;
-                    kmer_generator(alt_umer, kmer_size);
+                    //kmer_generator(alt_umer, kmer_size);
+                    generate_kmers(alt_umer, kmer_size, chromosome_name, rsid, position, ref[i], alts[i], dbgap_freqs[0], dbgap_freqs[i+1]);
                 }
             }
         }
