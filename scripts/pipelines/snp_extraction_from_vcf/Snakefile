@@ -1,0 +1,73 @@
+# Snakefile
+
+# Charger le fichier de configuration
+configfile: "/home/remycosta/phd/Anon/data/giab/snp_extraction_from_vcf/config.yaml"
+
+# Récupérer le fichier d'entrée depuis le fichier de configuration
+input_vcf = config["input_vcf"]
+output_dir = config["output_dir"]
+basename = input_vcf.split("/")[-1].replace(".vcf.gz", "")
+
+# Dossier temporaire pour les fichiers intermédiaires
+temp_dir = "tmp"
+
+# Règle principale
+rule all:
+    input:
+        f"{output_dir}/final/{basename}_snps_with_ids.vcf.gz",
+        f"{output_dir}/final/{basename}_snps_with_ids.vcf.gz.tbi"
+
+# Extraction des SNPs
+rule extract_snps:
+    input:
+        vcf=input_vcf
+    output:
+        vcf=f"{temp_dir}/{basename}_snps.vcf.gz"
+    shell:
+        """
+        bcftools view -v snps {input.vcf} -Oz -o {output.vcf}
+        """
+
+# Décompression du fichier
+rule decompress_vcf:
+    input:
+        vcf=f"{temp_dir}/{basename}_snps.vcf.gz"
+    output:
+        vcf=f"{temp_dir}/{basename}_snps.vcf"
+    shell:
+        """
+        bgzip -d -c {input.vcf} > {output.vcf}
+        """
+
+# Remplacement des identifiants
+rule replace_ids:
+    input:
+        vcf=f"{temp_dir}/{basename}_snps.vcf"
+    output:
+        vcf=f"{temp_dir}/{basename}_snps_with_ids.vcf"
+    shell:
+        """
+        awk 'BEGIN {{OFS="\t"; snp_id=1}} /^#/ {{print; next}} {{if ($3 == ".") {{$3 = "snp" snp_id; snp_id++}}; print}}' {input.vcf} > {output.vcf}
+        """
+
+# Compression du fichier modifié
+rule compress_vcf:
+    input:
+        vcf=f"{temp_dir}/{basename}_snps_with_ids.vcf"
+    output:
+        vcf=f"{output_dir}/final/{basename}_snps_with_ids.vcf.gz"
+    shell:
+        """
+        bgzip -c {input.vcf} > {output.vcf}
+        """
+
+# Indexation du fichier compressé
+rule index_vcf:
+    input:
+        vcf=f"{output_dir}/final/{basename}_snps_with_ids.vcf.gz"
+    output:
+        vcf_index=f"{output_dir}/final/{basename}_snps_with_ids.vcf.gz.tbi"
+    shell:
+        """
+        tabix -p vcf {input.vcf}
+        """

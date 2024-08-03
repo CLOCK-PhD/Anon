@@ -1,0 +1,4 @@
+# config.yaml
+
+input_vcf: "input.vcf.gz"  # Fichier d'entrée par défaut
+output_dir: "."            # Répertoire de sortie par défaut (même que l'entrée)
