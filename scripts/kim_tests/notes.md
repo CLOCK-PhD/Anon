@@ -170,7 +170,7 @@ terminate called after throwing an instance of 'std::runtime_error'
 
 Abandon (core dumped)
 ```
-C'est parce que RS est un int et pas un string, problème régé.
+C'est parce que RS est un int et pas un string, *problème régé*.
 
 Pour pseudogène par exemple :
 
@@ -289,7 +289,6 @@ On a donc ajouté une nouvelle fonction `rawALT()` qui extrait les ALT dans un v
 Les deux fonctions sont maintenant disponibles.
 
 
-
 ## Problèmes rencontrés avec htslib
 
 ### Extraction des valeurs contenues dans INFO
@@ -306,9 +305,79 @@ VC=INS8Project1:0.80,0.20|Project2:0.75,0.25|Project4:0.78,0.22PseudogeneA:10028
 
 Au lieu de simplement extraire la valeur de VC, le programme récupérait le champ suivant en ajoutant un caractère à la place du ";". On a même un cas où deux champs sont récupérés.
 On retrouve : "/", "%", "(", "8", "22", ou rien.
-Cette erreur n'apparait que si le champs VC n'est pas suivi d'un champ de type flag. Cela peut être dû à mon programme ou je supprimais des caractères invisibles. Toujours est-il que c'est un peu pourri si les caractères invisibles empêche le bon fonctionnement du programme, leur suppression assui.
+Cette erreur n'apparait que si le champs VC n'est pas suivi d'un champ de type flag. Cela peut être dû à mon programme ou je supprimais des caractères invisibles. Toujours est-il que c'est un peu pourri si les caractères invisibles empêche le bon fonctionnement du programme, leur suppression aussi.
+
+Cette erreur n'apparaît pas avec l'utilisation de VCFPP.
+
+## Contenu du fichier VCF de test
+
+### Cas envisageables :
+
+- INS en première position ?
+
+### Cas déjà inclus
+
+- Présence ou absence de COMMON
+- Fréquences : plusieurs projets, pas de projet, un seul projet
+- Variant dont les champs sont dans un autre ordre que celui de dbSNP (ils posaient pb avec htslib mais pas vcfpp)
+- Variant sans FREQ ni VC
+- Variant avec VC mais sans FREQ
+- Variant avec FREQ mais sans VC
+- Variant avec N en ALT
+- Variant avec N en REF
+- Variant en première position
+- Variant à la dernière position
+- Champs INFO vides : le programme pour générer le fasta va passer à la ligne suivante
+
+### Détail
+#### Chromosome A
+- rs1       SNP, 1 ALT, !COMMON
+- rs2       SNP, 2 ALT, !COMMON
+- rs3       INS, !COMMON
+- rs4       INS, !GENEINFO, !COMMON
+- rs5       INS, REF=N, !GENEINFO, !tag R#, !COMMON
+- rs6       SNP OK, 1 ALT
+- rs7       SNP, 1 ALT, inversion position SSR et GENEINFO !COMMON
+- rs8       SNP, 2 ALT, !COMMON
+- rs9       INS, !COMMON
+#### Chromosome B
+- rs10      SNP OK, 1 ALT, POS=1
+- rs11      SNP, 1 ALT, !COMMON
+- rs12      INDEL, !COMMON
+- rs13      SNP, 1 ALT, !COMMON
+- rs14      INS OK
+- rs15      SNP, 2 ALT, ALT2=N
+- rs16      DEL, !COMMON
+- rs17      SNP, 1 ALT, !COMMON
+- rs18      DEL, !COMMON
+- rs19      DEL, !COMMON
+- rs20      INS (2) OK
+#### Chromosome C
+- rs21      SNP, 1 ALT, !COMMON
+- rs22      INS, !COMMON
+- rs23      SNV, !COMMON
+- rs24      INDEL (INS), !COMMON
+- rs25      SNP OK, 2 ALT
+- rs26      SNP, 1 ALT, !COMMON
+- rs27      INDEL, !FREQ, !COMMON
+- rs28      SNP OK, 2 ALT
+- rs29      INDEL, !COMMON
+- rs30      SNP OK, 1 ALT, POS=250(fin)
+#### Chromosome D
+- rs31      SNP, 2 ALT, Project Freq = 0 pour ALT2
+- rs32      INDEL, !COMMON
+- rs33      SNP, 1 ALT, !COMMON
+- rs34      SNP OK, 2 ALT
+- rs35      (SNP), !VC, 1 ALT
+- rs36      INDEL OK
+- rs37      INS, !VC, !FREQ
+- rs38      SNP, 1 ALT, !FREQ
+- rs39      INDEL, 2 ALT (ALT1 = INS, ALT2 = SNV)
+- rs40      MNV
 
 
+
+##### Truc en plus pour la rédaction
 
 Pour les "copiers/collers":
 ```cpp
